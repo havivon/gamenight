@@ -159,17 +159,17 @@ input[type=text]:focus{outline:none;border-color:var(--p1);background:white;box-
   color:white;padding:7px 16px;border-radius:20px;font-weight:600;font-size:.95rem;
 }
 .letters-grid{
-  display:flex;justify-content:center;gap:6px;margin:18px 0;flex-wrap:wrap;
-  direction:ltr;
+  display:grid;grid-template-columns:repeat(8, minmax(0, 1fr));
+  gap:6px;margin:18px 0;direction:ltr;
+  width:100%;max-width:520px;margin-left:auto;margin-right:auto;
 }
 .letter-tile{
-  width:56px;height:66px;
   background:#fbf7ee;
   border:1.5px solid var(--border);
   border-radius:10px;
   display:flex;align-items:center;justify-content:center;
-  font-size:2.5rem;font-weight:700;color:var(--text);
-  flex:0 0 auto;
+  font-size:clamp(1.2rem, 5vw, 2.2rem);font-weight:700;color:var(--text);
+  aspect-ratio:5/6;min-width:0;
   box-shadow:0 1px 0 rgba(45,62,80,.04);
 }
 .timer{display:none}
@@ -281,7 +281,7 @@ input[type=text]:focus{outline:none;border-color:var(--p1);background:white;box-
   input[type=text]{padding:14px 16px;font-size:16px}
   .tile{width:36px;height:46px;font-size:1.3rem;border-radius:8px}
   .tile.gap{width:12px}
-  .letter-tile{width:40px;height:50px;font-size:1.5rem;border-radius:10px}
+  .letters-grid{gap:4px}
   .code{font-size:1.9rem;letter-spacing:.1em}
   .scrambled{font-size:2rem;padding:14px}
   .answer-hint{font-size:1.3rem;gap:3px}
@@ -295,7 +295,7 @@ input[type=text]:focus{outline:none;border-color:var(--p1);background:white;box-
 }
 @media (max-width:380px){
   .tile{width:30px;height:40px;font-size:1.1rem}
-  .letter-tile{width:34px;height:42px;font-size:1.25rem}
+  .letters-grid{gap:3px}
 }
 </style>
 </head>
@@ -312,65 +312,116 @@ input[type=text]:focus{outline:none;border-color:var(--p1);background:white;box-
 // Game 1: Unscramble. Single 6+ letter words (mostly singular forms) or
 // real Hebrew multi-word phrases/names.
 const UNSCRAMBLE_DATA = [
-  // Single 6+ letter SINGULAR words only
-  {topic:'מקום בעיר', word:'ספרייה'},
-  {topic:'ענף ספורט', word:'כדורגל'},
-  {topic:'ירק', word:'כרובית'},
-  {topic:'ירק', word:'עגבניה'},
-  {topic:'ירק', word:'מלפפון'},
-  {topic:'פרי', word:'אבוקדו'},
-  {topic:'תחבורה', word:'מכונית'},
-  {topic:'חדר בבית', word:'אמבטיה'},
-  {topic:'מתוק', word:'שוקולד'},
-  {topic:'משרד', word:'עיפרון'},
+  // Harder 6+ letter SINGULAR words requiring more thought
+  {topic:'תחבורה', word:'אוטובוס'},
   {topic:'מבנה', word:'תיאטרון'},
   {topic:'בעל חיים', word:'תרנגול'},
   {topic:'בעל חיים', word:'דולפין'},
   {topic:'בעל חיים', word:'תנשמת'},
+  {topic:'בעל חיים', word:'היפופוטם'},
+  {topic:'בעל חיים', word:'שימפנזה'},
+  {topic:'בעל חיים', word:'קנגורו'},
+  {topic:'בעל חיים', word:'גורילה'},
+  {topic:'בעל חיים', word:'תמנון'},
+  {topic:'בעל חיים', word:'אנקור'},
+  {topic:'בעל חיים', word:'תנינים'},
+  {topic:'בעל חיים', word:'חרגול'},
+  {topic:'בעל חיים', word:'איילה'},
+  {topic:'בעל חיים', word:'יחמור'},
   {topic:'מאפה', word:'מלאווח'},
-  {topic:'תחבורה', word:'אוטובוס'},
   {topic:'מקצוע', word:'אדריכל'},
-  {topic:'פרי', word:'דובדבן'},
-  {topic:'פרי', word:'אפרסמון'},
-  {topic:'תחביב', word:'מוסיקה'},
-  {topic:'בית', word:'מטבחון'},
-  {topic:'מבנה', word:'מגדלור'},
-  {topic:'גוף', word:'גולגולת'},
   {topic:'מקצוע', word:'אינסטלטור'},
   {topic:'מקצוע', word:'פסיכולוג'},
   {topic:'מקצוע', word:'גינקולוג'},
   {topic:'מקצוע', word:'אופטיקאי'},
   {topic:'מקצוע', word:'דיאטנית'},
-  {topic:'בעל חיים', word:'היפופוטם'},
+  {topic:'מקצוע', word:'אסטרונאוט'},
+  {topic:'מקצוע', word:'פיזיותרפיסט'},
+  {topic:'מקצוע', word:'חשמלאי'},
+  {topic:'מקצוע', word:'כירורג'},
+  {topic:'מקצוע', word:'דרמטולוג'},
+  {topic:'פרי', word:'דובדבן'},
+  {topic:'פרי', word:'אפרסמון'},
+  {topic:'פרי', word:'פסיפלורה'},
+  {topic:'פרי', word:'קלמנטינה'},
+  {topic:'פרי', word:'גרייפפרוט'},
+  {topic:'פרי', word:'אבוקדו'},
+  {topic:'תחביב', word:'מוסיקה'},
+  {topic:'בית', word:'מטבחון'},
+  {topic:'מבנה', word:'מגדלור'},
+  {topic:'גוף', word:'גולגולת'},
+  {topic:'גוף', word:'שלפוחית'},
+  {topic:'גוף', word:'קרסולים'},
   {topic:'מקום', word:'אוניברסיטה'},
+  {topic:'אובייקט', word:'מטוטלת'},
+  {topic:'אובייקט', word:'מסחטה'},
+  {topic:'אובייקט', word:'מאוורר'},
+  {topic:'אובייקט', word:'מסחטה'},
+  {topic:'אובייקט', word:'מצפן'},
+  {topic:'מדע', word:'מולקולה'},
+  {topic:'מדע', word:'גרביטציה'},
+  {topic:'מדע', word:'אטמוספירה'},
+  {topic:'נשק', word:'חרמש'},
+  {topic:'נשק', word:'תותח'},
+  {topic:'אוכל', word:'שווארמה'},
+  {topic:'מתוק', word:'מקופלת'},
+  {topic:'מתוק', word:'מרשמלו'},
+  {topic:'מתוק', word:'בראוניז'},
+  {topic:'מתוק', word:'טירמיסו'},
   {topic:'תכשיט', word:'שרשרת'},
+  {topic:'אובייקט', word:'מצלמה'},
+  {topic:'יצירה', word:'פסיפס'},
+  {topic:'יצירה', word:'אורגן'},
+  {topic:'יצירה', word:'הרמוניקה'},
+  {topic:'יצירה', word:'אקורדיון'},
+  {topic:'יצירה', word:'סקסופון'},
+  {topic:'יצירה', word:'מנדולינה'},
+  {topic:'נוף', word:'אנדרטה'},
+  {topic:'נוף', word:'אקווריום'},
+  {topic:'מבנה', word:'אמפיתיאטרון'},
+  {topic:'מקום', word:'מצדה'},
+  {topic:'תופעה', word:'הוריקן'},
+  {topic:'תופעה', word:'טורנדו'},
+  {topic:'תופעה', word:'צונאמי'},
+  {topic:'תופעה', word:'רעידת אדמה'},
+  {topic:'מצב נפשי', word:'דיכאון'},
+  {topic:'מצב נפשי', word:'מלנכוליה'},
+  {topic:'אוכל', word:'מרגרינה'},
+  {topic:'תכונה', word:'אידיאליסט'},
+  {topic:'תכונה', word:'פסימיסט'},
+  {topic:'מבנה', word:'אצטדיון'},
+  {topic:'אובייקט', word:'מקרופון'},
+  {topic:'אובייקט', word:'מנורה'},
+  {topic:'אובייקט', word:'מסחטה'},
+  {topic:'מקום', word:'מנזר'},
+  {topic:'אוכל', word:'חצילים'},
+  {topic:'בעל חיים', word:'חזירונים'},
+  {topic:'מאפיינים', word:'אופטימיות'},
+  {topic:'מקום', word:'מעבדה'},
+  {topic:'אובייקט', word:'מחשבון'},
+  {topic:'אוכל', word:'אנטיפסטי'},
+  {topic:'מטבח', word:'מערוך'},
   {topic:'בית', word:'מקלחת'},
-  {topic:'מטבח', word:'מקרר'},
   {topic:'בית', word:'מרפסת'},
   {topic:'מבנה', word:'מסעדה'},
-  {topic:'מקום', word:'בריכה'},
   {topic:'אוכל', word:'חומוס'},
   {topic:'אוכל', word:'פלאפל'},
+  {topic:'אוכל', word:'גבינה'},
   {topic:'אוכל', word:'בורקס'},
   {topic:'אוכל', word:'שניצל'},
-  {topic:'אוכל', word:'גבינה'},
   {topic:'בעל חיים', word:'גירפה'},
   {topic:'בעל חיים', word:'קרנף'},
-  {topic:'בעל חיים', word:'תמנון'},
-  {topic:'בעל חיים', word:'קנגורו'},
-  {topic:'בעל חיים', word:'גורילה'},
-  {topic:'בעל חיים', word:'שימפנזה'},
-  {topic:'מקצוע', word:'מהנדס'},
-  {topic:'מקצוע', word:'אדריכל'},
-  {topic:'מקצוע', word:'מתכנת'},
-  {topic:'מקצוע', word:'מורה'},
   {topic:'יצירה', word:'פסנתר'},
   {topic:'יצירה', word:'גיטרה'},
-  {topic:'מטבח', word:'מערוך'},
-  {topic:'נוף', word:'מפרץ'},
-  {topic:'נוף', word:'מדבר'},
-  {topic:'בית', word:'סלון'},
-  {topic:'בית', word:'מטבח'},
+  {topic:'מקום בעיר', word:'ספרייה'},
+  {topic:'ענף ספורט', word:'כדורגל'},
+  {topic:'ירק', word:'כרובית'},
+  {topic:'ירק', word:'עגבניה'},
+  {topic:'ירק', word:'מלפפון'},
+  {topic:'תחבורה', word:'מכונית'},
+  {topic:'חדר בבית', word:'אמבטיה'},
+  {topic:'מתוק', word:'שוקולד'},
+  {topic:'משרד', word:'עיפרון'},
   // Multi-word real phrases/names
   {topic:'עיר בישראל', word:['באר','שבע']},
   {topic:'יישוב בישראל', word:['ראש','פינה']},
@@ -1024,7 +1075,7 @@ const GameLogic = {
   // Called by host to start a new full match
   startMatch(mode){
     state.mode = mode;
-    state.gameSequence = ['unscramble','anagram','categories','wordchain','wordchain'];
+    state.gameSequence = ['unscramble','anagram','categories'];
     state.gameIndex = 0;
     // assign teams if needed
     const ids = Object.keys(state.players);
@@ -1093,32 +1144,55 @@ const Games = {};
 
 /* --- Game 1: Unscramble --- */
 Games.unscramble = {
-  ROUNDS: 8,
+  ROUNDS: 10,
   ROUND_TIME: 20,
+  _recent: [], // tracks recently shown words across matches to avoid repeats
   start(){
     const used = new Set();
     const items = [];
     const pool = shuffle(UNSCRAMBLE_DATA);
+    // Skip recently used words across matches (about 60% of recent rounds)
+    const recentSkip = new Set(this._recent.slice(-20));
+    // First pass: prefer items not in recent
     for (const it of pool){
       if (items.length >= this.ROUNDS) break;
       const key = Array.isArray(it.word)?it.word.join(' '):it.word;
       if (used.has(key)) continue;
-      // Validate per requested rules: single word >= 6 letters, OR
-      // each word in a phrase must be at least 3 letters.
+      if (recentSkip.has(key)) continue;
       let valid = false;
       if (Array.isArray(it.word)){
         valid = it.word.length >= 2 && it.word.every(w => w.length >= 3) && key.replace(/\s/g,'').length <= 10;
       } else {
-        valid = it.word.length >= 6 && it.word.length <= 9;
+        valid = it.word.length >= 6 && it.word.length <= 10;
       }
       if (!valid) continue;
       used.add(key);
       items.push(it);
     }
-    // pad with anything if not enough
+    // Second pass: allow recent if not enough
+    for (const it of pool){
+      if (items.length >= this.ROUNDS) break;
+      const key = Array.isArray(it.word)?it.word.join(' '):it.word;
+      if (used.has(key)) continue;
+      let valid = false;
+      if (Array.isArray(it.word)){
+        valid = it.word.length >= 2 && it.word.every(w => w.length >= 3) && key.replace(/\s/g,'').length <= 10;
+      } else {
+        valid = it.word.length >= 6 && it.word.length <= 10;
+      }
+      if (!valid) continue;
+      used.add(key);
+      items.push(it);
+    }
     while (items.length < this.ROUNDS && pool.length){
       items.push(pool[items.length % pool.length]);
     }
+    // Record what we picked so future matches avoid repeats
+    items.forEach(it => {
+      const k = Array.isArray(it.word)?it.word.join(' '):it.word;
+      this._recent.push(k);
+    });
+    if (this._recent.length > 60) this._recent = this._recent.slice(-60);
     state.currentGame = {
       name:'unscramble',
       round: 0,
@@ -1239,7 +1313,8 @@ Games.anagram = {
     g.submissions[entity] = g.submissions[entity] || [];
     if (g.submissions[entity].includes(word)) return;
     g.submissions[entity].push(word);
-    broadcastState(); render();
+    // Words are private during round — no broadcast/render.
+    // Submitter optimistically updates own UI client-side.
   },
   async _finish(){
     const g = state.currentGame;
@@ -1367,7 +1442,7 @@ Games.categories = {
     if (!entity) return;
     g.submissions[entity] = g.submissions[entity] || [];
     g.submissions[entity].push(word);
-    broadcastState(); render();
+    // No broadcast during round — answers are private until reveal.
   },
   _finish(){
     const g = state.currentGame;
@@ -1839,21 +1914,32 @@ function renderAnagram(){
   if (g.phase==='play'){
     const inp = el('input',{type:'text', placeholder:'הקלד מילה ולחץ Enter...'});
     const myEnt = state.mode==='teams' ? state.players[state.myId]?.team : state.myId;
-    const myWords = (g.submissions[myEnt]||[]);
+    g.submissions[myEnt] = g.submissions[myEnt] || [];
+    const myWords = g.submissions[myEnt];
+    // Use a live-updated DOM list so we don't re-render the whole UI
+    // (which would steal keyboard focus from typing players).
+    const wl = el('div',{class:'word-list'});
+    const renderList = ()=>{
+      wl.innerHTML='';
+      myWords.forEach(w=> wl.appendChild(el('div',{class:'word-tag'}, w)));
+      if (myWords.length===0) wl.appendChild(el('span',{class:'muted-text'},'עדיין אין מילים'));
+    };
     const sub = ()=>{
       const v = inp.value.trim(); if (!v) return;
+      // Optimistic local update so UI feels instant
+      if (!myWords.includes(v)) myWords.push(v);
+      renderList();
       sendToHost({type:'answer', answer:v});
       inp.value='';
+      inp.focus();
     };
-    inp.addEventListener('keydown',e=>{ if (e.key==='Enter') sub(); });
+    inp.addEventListener('keydown',e=>{ if (e.key==='Enter'){ e.preventDefault(); sub(); }});
     c.appendChild(inp);
     c.appendChild(el('button',{class:'btn btn-p', onclick:sub},'הוסף מילה'));
     setTimeout(()=>inp.focus(),50);
 
     c.appendChild(el('h3',{style:'margin-top:14px'},'המילים שלי/הקבוצה שלי:'));
-    const wl = el('div',{class:'word-list'});
-    myWords.forEach(w=> wl.appendChild(el('div',{class:'word-tag'}, w)));
-    if (myWords.length===0) wl.appendChild(el('span',{class:'muted-text'},'עדיין אין מילים'));
+    renderList();
     c.appendChild(wl);
   }
   c.appendChild(el('div',{class:'divider'}));
@@ -1874,20 +1960,28 @@ function renderCategories(){
   if (g.phase==='play'){
     const inp = el('input',{type:'text', placeholder:'תשובה ולחץ Enter...'});
     const myEnt = state.mode==='teams' ? state.players[state.myId]?.team : state.myId;
-    const myWords = (g.submissions[myEnt]||[]);
+    g.submissions[myEnt] = g.submissions[myEnt] || [];
+    const myWords = g.submissions[myEnt];
+    const wl = el('div',{class:'word-list'});
+    const renderList = ()=>{
+      wl.innerHTML='';
+      myWords.forEach(w=> wl.appendChild(el('div',{class:'word-tag'}, w)));
+      if (myWords.length===0) wl.appendChild(el('span',{class:'muted-text'},'עדיין אין תשובות'));
+    };
     const sub = ()=>{
       const v = inp.value.trim(); if (!v) return;
+      myWords.push(v);
+      renderList();
       sendToHost({type:'answer', answer:v});
       inp.value='';
+      inp.focus();
     };
-    inp.addEventListener('keydown',e=>{ if (e.key==='Enter') sub(); });
+    inp.addEventListener('keydown',e=>{ if (e.key==='Enter'){ e.preventDefault(); sub(); }});
     c.appendChild(inp);
     c.appendChild(el('button',{class:'btn btn-p', onclick:sub},'הוסף תשובה'));
     setTimeout(()=>inp.focus(),50);
     c.appendChild(el('h3',{style:'margin-top:14px'},'התשובות שלי:'));
-    const wl = el('div',{class:'word-list'});
-    myWords.forEach(w=> wl.appendChild(el('div',{class:'word-tag'}, w)));
-    if (myWords.length===0) wl.appendChild(el('span',{class:'muted-text'},'עדיין אין תשובות'));
+    renderList();
     c.appendChild(wl);
   }
   c.appendChild(el('div',{class:'divider'}));
