@@ -622,10 +622,39 @@ function genCode() {
   return s;
 }
 
+// PeerJS configuration - explicit secure settings + STUN/TURN for NAT traversal.
+// Default 0.peerjs.com server can be flaky; explicit secure:true on https avoids
+// silent http downgrades, and STUN/TURN helps friends on different networks.
+const PEER_CONFIG = {
+  debug: 1,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' }
+    ]
+  }
+};
+
+function _setupPeerKeepAlive(p){
+  // PeerJS sometimes silently disconnects from signaling server.
+  // Reconnect automatically so the host stays reachable for joining clients.
+  p.on('disconnected', () => {
+    console.warn('Peer disconnected from signaling server, reconnecting...');
+    setTimeout(()=>{ try { p.reconnect(); } catch(e){} }, 500);
+  });
+}
+
 function startHost(name, onReady) {
   const code = genCode();
-  peer = new Peer('GN-' + code, { debug: 1 });
+  // Use lowercase peer id (PeerJS server normalizes; some users had trouble with mixed-case)
+  const peerId = 'gn-' + code.toLowerCase();
+  peer = new Peer(peerId, PEER_CONFIG);
+  let opened = false;
   peer.on('open', id => {
+    if (opened) return;
+    opened = true;
     state.isHost = true;
     state.myId = id;
     state.myName = name;
@@ -647,34 +676,72 @@ function startHost(name, onReady) {
   });
   peer.on('error', err => {
     console.error('Peer error:', err);
-    showToast('בעיית חיבור: ' + (err.type || err.message), 'error');
+    if (err.type === 'unavailable-id'){
+      // Clash on host id (rare with random codes). Regenerate.
+      try { peer.destroy(); } catch(e){}
+      setTimeout(()=>startHost(name, onReady), 200);
+      return;
+    }
+    if (!opened) showToast('בעיית חיבור למארח: ' + (err.type || err.message), 'error');
   });
+  _setupPeerKeepAlive(peer);
 }
 
 function joinAsClient(code, name, onReady, onErr) {
-  peer = new Peer({ debug: 1 });
-  peer.on('open', id => {
-    state.myId = id;
-    state.myName = name;
-    state.gameCode = code;
-    const conn = peer.connect('GN-' + code, { reliable: true });
-    hostConn = conn;
-    let opened = false;
-    conn.on('open', () => {
-      opened = true;
-      conn.send({ type:'join', name });
-      onReady && onReady();
+  const cleanCode = (code||'').trim().toUpperCase();
+  const targetPeerId = 'gn-' + cleanCode.toLowerCase();
+  let attempts = 0;
+
+  function attempt(){
+    attempts++;
+    try { peer && peer.destroy(); } catch(e){}
+    peer = new Peer(undefined, PEER_CONFIG);
+    let myOpened = false;
+    let connOpened = false;
+    let errored = false;
+
+    peer.on('open', id => {
+      if (myOpened) return;
+      myOpened = true;
+      state.myId = id;
+      state.myName = name;
+      state.gameCode = cleanCode;
+      const conn = peer.connect(targetPeerId, { reliable: true, metadata: { name } });
+      hostConn = conn;
+      conn.on('open', () => {
+        connOpened = true;
+        conn.send({ type:'join', name });
+        onReady && onReady();
+      });
+      conn.on('data', data => handleClientMessage(data));
+      conn.on('close', () => {
+        showToast('הקשר עם המארח נסגר', 'error');
+      });
+      // Connection-establishment timeout (we ARE registered, just can't reach host)
+      setTimeout(()=>{
+        if (connOpened || errored) return;
+        if (attempts < 2){ attempt(); return; }
+        onErr && onErr('לא הצלחנו להתחבר. ודא שהמארח לא סגר את הדפדפן ושהקוד נכון.');
+      }, 9000);
     });
-    conn.on('data', data => handleClientMessage(data));
-    conn.on('close', () => {
-      showToast('הקשר עם המארח נסגר', 'error');
+
+    peer.on('error', err => {
+      console.error('Client peer error:', err);
+      if (err.type === 'peer-unavailable'){
+        if (attempts < 2){ setTimeout(attempt, 1500); return; } // retry once after 1.5s
+        errored = true;
+        onErr && onErr('הקוד לא קיים או שהמארח עדיין לא מוכן. נסו שוב בעוד כמה שניות.');
+        return;
+      }
+      if (err.type === 'network' || err.type === 'server-error'){
+        if (attempts < 2){ setTimeout(attempt, 1500); return; }
+      }
+      errored = true;
+      onErr && onErr('שגיאת חיבור: ' + (err.type || err.message || 'לא ידוע'));
     });
-    setTimeout(()=>{ if(!opened) onErr && onErr('לא הצלחנו להתחבר לקוד הזה'); }, 8000);
-  });
-  peer.on('error', err => {
-    if (err.type === 'peer-unavailable') onErr && onErr('הקוד לא תקין או שהמשחק לא קיים');
-    else onErr && onErr('שגיאת חיבור: ' + err.type);
-  });
+    _setupPeerKeepAlive(peer);
+  }
+  attempt();
 }
 
 function broadcast(msg) {
@@ -1565,9 +1632,6 @@ function renderHome(){
   c.appendChild(el('p',{class:'sub'}, 'משחק חברתי אונליין עם חברים – ישר מהדפדפן'));
   c.appendChild(el('button',{class:'btn btn-p', onclick:()=>{ state.screen='createForm'; render(); }},'🚀 צור משחק'));
   c.appendChild(el('button',{class:'btn btn-s', onclick:()=>{ state.screen='joinForm'; render(); }},'🎯 הצטרף למשחק'));
-  c.appendChild(el('div',{class:'divider'}));
-  c.appendChild(el('button',{class:'btn btn-mute', onclick:startTestMode},'🧪 מצב בדיקה (סולו - כל המשחקים)'));
-  c.appendChild(el('p',{class:'muted-text'},'מצב בדיקה: הפעלת כל המשחקונים בלי שחקנים נוספים'));
   return c;
 }
 
