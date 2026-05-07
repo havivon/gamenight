@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "mcp__Claude_Preview__preview_start",
-      "Bash(awk 'NR==1584,NR==1631{print NR\":\"$0}' \"C:/Users/YANIV/My Projects/GameNight/index.html\")"
-    ]
-  }
-}
