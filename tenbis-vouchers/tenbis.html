@@ -6,808 +6,447 @@
   <title>תן ביס – שוברים שלי</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --red:    #e8392e;
-      --red-dk: #c42d24;
-      --green:  #16a34a;
-      --bg:     #f1f5f9;
-      --card:   #ffffff;
-      --border: #e2e8f0;
-      --text:   #1e293b;
-      --muted:  #64748b;
-      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+      --red: #e8392e; --red-dk: #c42d24; --green: #16a34a;
+      --bg: #f1f5f9; --card: #fff; --border: #e2e8f0;
+      --text: #1e293b; --muted: #64748b;
+      --shadow: 0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
     }
+    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+    nav { background:#fff; border-bottom:1px solid var(--border); padding:0 20px; height:52px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:10; }
+    .brand { font-size:19px; font-weight:800; color:var(--red); }
+    .brand em { color:var(--text); font-style:normal; font-weight:400; font-size:14px; margin-right:6px; }
+    #logout-btn { margin-right:auto; background:none; border:1px solid var(--border); border-radius:8px; padding:5px 13px; font-size:13px; cursor:pointer; color:var(--muted); display:none; }
+    #logout-btn:hover { border-color:var(--red); color:var(--red); }
 
-    /* ─── NAV ─────────────────────────────────────── */
-    nav {
-      background: #fff;
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
-      height: 56px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    .page { max-width:660px; margin:0 auto; padding:28px 14px 60px; }
 
-    nav .brand { font-size: 20px; font-weight: 800; color: var(--red); }
-    nav .brand span { color: var(--text); font-weight: 400; font-size: 15px; margin-right: 6px; }
+    /* ── AUTH ── */
+    .auth-card { background:var(--card); border-radius:20px; box-shadow:var(--shadow); padding:40px 32px; max-width:400px; margin:40px auto 0; }
+    .auth-icon { width:60px; height:60px; background:#fef2f2; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 18px; }
+    .auth-card h2 { font-size:21px; font-weight:700; text-align:center; margin-bottom:5px; }
+    .auth-card .sub { font-size:14px; color:var(--muted); text-align:center; margin-bottom:26px; }
+    label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:5px; }
+    input { width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:10px; font-size:15px; outline:none; transition:border-color .15s; direction:ltr; text-align:center; }
+    input:focus { border-color:var(--red); }
+    .btn { width:100%; padding:12px; background:var(--red); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:13px; transition:background .15s,opacity .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn:hover:not(:disabled) { background:var(--red-dk); }
+    .btn:disabled { opacity:.55; cursor:not-allowed; }
+    .btn-link { background:none; border:none; color:var(--red); font-size:13px; cursor:pointer; margin-top:13px; display:block; text-align:center; text-decoration:underline; }
+    .alert { border-radius:10px; padding:10px 13px; font-size:13px; line-height:1.5; margin-top:12px; display:none; }
+    .alert-err  { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+    .alert-info { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 
-    nav .logout-btn {
-      margin-right: auto;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 5px 14px;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--muted);
-      display: none;
-    }
-    nav .logout-btn:hover { border-color: var(--red); color: var(--red); }
+    /* ── DASHBOARD ── */
+    #dashboard { display:none; }
+    .summary { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+    .stat { background:var(--card); border-radius:13px; padding:13px 18px; flex:1; min-width:110px; box-shadow:var(--shadow); }
+    .stat .v { font-size:26px; font-weight:800; }
+    .stat .l { font-size:11px; color:var(--muted); margin-top:1px; }
+    .stat.green .v { color:var(--green); }
+    .stat.red   .v { color:var(--red); }
 
-    /* ─── PAGE WRAPPER ────────────────────────────── */
-    .page { max-width: 680px; margin: 0 auto; padding: 32px 16px 60px; }
+    .toolbar { background:var(--card); border-radius:13px; box-shadow:var(--shadow); padding:12px 14px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
+    .seg { display:flex; background:var(--bg); border-radius:8px; padding:3px; gap:2px; }
+    .seg button { padding:5px 12px; border:none; background:none; border-radius:6px; font-size:13px; cursor:pointer; color:var(--muted); font-weight:500; transition:.15s; }
+    .seg button.on { background:#fff; color:var(--text); font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+    .chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .chip { padding:5px 11px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font-size:13px; cursor:pointer; color:var(--muted); transition:.15s; }
+    .chip.on { border-color:var(--red); background:#fef2f2; color:var(--red); font-weight:600; }
 
-    /* ─── AUTH CARD ───────────────────────────────── */
-    .auth-card {
-      background: var(--card);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
-      padding: 44px 40px;
-      max-width: 420px;
-      margin: 48px auto 0;
-    }
+    .vlist { display:flex; flex-direction:column; gap:11px; }
+    .vc { background:var(--card); border-radius:13px; box-shadow:var(--shadow); border:1.5px solid var(--border); overflow:hidden; transition:transform .1s; }
+    .vc:hover { transform:translateY(-1px); }
+    .vc.used { opacity:.6; }
+    .vc-top { padding:14px 16px; display:flex; align-items:center; gap:12px; }
+    .vc-ico { width:42px; height:42px; border-radius:10px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:21px; flex-shrink:0; }
+    .vc-info { flex:1; min-width:0; }
+    .vc-store { font-size:15px; font-weight:700; }
+    .vc-meta { font-size:12px; color:var(--muted); margin-top:2px; }
+    .vc-right { text-align:left; flex-shrink:0; }
+    .vc-amt { font-size:24px; font-weight:800; color:var(--red); }
+    .badge { display:inline-flex; align-items:center; gap:3px; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; margin-top:3px; }
+    .badge-ok   { background:#dcfce7; color:#15803d; }
+    .badge-used { background:#f1f5f9; color:#94a3b8; }
+    .vc-foot { border-top:1px solid var(--border); padding:9px 16px; display:flex; align-items:center; gap:8px; }
+    .barcode-btn { background:none; border:1px solid var(--border); border-radius:7px; padding:5px 11px; font-size:12px; cursor:pointer; color:var(--muted); transition:.15s; }
+    .barcode-btn:hover { border-color:var(--red); color:var(--red); }
+    .exp { font-size:12px; color:var(--muted); margin-right:auto; }
+    .exp.soon { color:#d97706; font-weight:600; }
+    .bc-panel { border-top:1px solid var(--border); background:#fafafa; padding:16px; text-align:center; display:none; }
+    .bc-panel img { max-width:100%; max-height:110px; border-radius:6px; }
+    .bc-num { font-family:monospace; font-size:14px; margin-top:7px; letter-spacing:2px; }
 
-    .auth-icon {
-      width: 64px; height: 64px;
-      background: #fef2f2;
-      border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
-      margin: 0 auto 20px;
-    }
-
-    .auth-card h2 { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 6px; }
-    .auth-card p.sub { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 28px; }
-
-    label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
-
-    input[type="email"], input[type="text"] {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 15px;
-      outline: none;
-      transition: border-color .15s;
-      direction: ltr;
-      text-align: center;
-    }
-    input:focus { border-color: var(--red); }
-
-    .btn-primary {
-      width: 100%;
-      padding: 12px;
-      background: var(--red);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 14px;
-      transition: background .15s, opacity .15s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn-primary:hover:not(:disabled) { background: var(--red-dk); }
-    .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
-
-    .btn-link {
-      background: none; border: none;
-      color: var(--red); font-size: 13px;
-      cursor: pointer; margin-top: 14px;
-      display: block; text-align: center;
-      text-decoration: underline;
-    }
-
-    .alert {
-      border-radius: 10px;
-      padding: 11px 14px;
-      font-size: 13px;
-      line-height: 1.5;
-      margin-top: 14px;
-      display: none;
-    }
-    .alert-error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-    .alert-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-
-    .otp-hint { font-size: 13px; color: var(--muted); text-align: center; margin-top: 10px; }
-
-    /* ─── DASHBOARD ───────────────────────────────── */
-    #dashboard { display: none; }
-
-    /* Summary strip */
-    .summary-strip {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    .stat-box {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 14px 20px;
-      flex: 1;
-      min-width: 130px;
-      box-shadow: var(--shadow);
-    }
-    .stat-box .val { font-size: 28px; font-weight: 800; color: var(--text); }
-    .stat-box .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .stat-box.active .val { color: var(--green); }
-    .stat-box.total-val  .val { color: var(--red); }
-
-    /* Filters */
-    .toolbar {
-      background: var(--card);
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      padding: 14px 16px;
-      margin-bottom: 16px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .seg {
-      display: flex;
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 3px;
-      gap: 2px;
-    }
-
-    .seg button {
-      padding: 5px 13px;
-      border: none;
-      background: none;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--muted);
-      font-weight: 500;
-      transition: background .15s, color .15s;
-    }
-    .seg button.active {
-      background: #fff;
-      color: var(--text);
-      font-weight: 700;
-      box-shadow: 0 1px 3px rgba(0,0,0,.1);
-    }
-
-    .store-filter {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .store-chip {
-      padding: 5px 12px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: #fff;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--muted);
-      transition: all .15s;
-    }
-    .store-chip.active {
-      border-color: var(--red);
-      background: #fef2f2;
-      color: var(--red);
-      font-weight: 600;
-    }
-
-    /* Voucher list */
-    .voucher-list { display: flex; flex-direction: column; gap: 12px; }
-
-    .vcard {
-      background: var(--card);
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      border: 1.5px solid var(--border);
-      transition: transform .1s;
-    }
-    .vcard:hover { transform: translateY(-1px); }
-    .vcard.used  { opacity: .6; }
-
-    .vcard-top {
-      padding: 16px 18px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .store-icon {
-      width: 44px; height: 44px;
-      border-radius: 10px;
-      background: var(--bg);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-    }
-
-    .vcard-info { flex: 1; min-width: 0; }
-    .vcard-store { font-size: 16px; font-weight: 700; }
-    .vcard-meta  { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-    .vcard-right { text-align: left; flex-shrink: 0; }
-    .vcard-amount { font-size: 26px; font-weight: 800; color: var(--red); }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-    .badge-active { background: #dcfce7; color: #15803d; }
-    .badge-used   { background: #f1f5f9; color: #94a3b8; }
-
-    .vcard-bottom {
-      border-top: 1px solid var(--border);
-      padding: 10px 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .barcode-btn {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 5px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      color: var(--muted);
-      transition: all .15s;
-    }
-    .barcode-btn:hover { border-color: var(--red); color: var(--red); }
-
-    .expiry-label { font-size: 12px; color: var(--muted); margin-right: auto; }
-    .expiry-label.soon { color: #d97706; font-weight: 600; }
-
-    .barcode-panel {
-      border-top: 1px solid var(--border);
-      background: #fafafa;
-      padding: 18px;
-      text-align: center;
-      display: none;
-    }
-    .barcode-panel img { max-width: 100%; max-height: 120px; border-radius: 6px; }
-    .barcode-num { font-family: monospace; font-size: 15px; color: var(--text); margin-top: 8px; letter-spacing: 2px; }
-
-    /* Loading */
-    .loading-wrap { text-align: center; padding: 60px 20px; }
-    .spinner {
-      width: 40px; height: 40px;
-      border: 4px solid var(--border);
-      border-top-color: var(--red);
-      border-radius: 50%;
-      animation: spin .75s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-
-    /* CORS warning */
-    .cors-box {
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-radius: 12px;
-      padding: 16px 18px;
-      font-size: 13px;
-      line-height: 1.7;
-      display: none;
-    }
-    .cors-box strong { color: #92400e; }
-    .cors-box code {
-      background: #fef3c7;
-      border-radius: 4px;
-      padding: 1px 5px;
-      font-size: 12px;
-    }
-
-    @media (max-width: 480px) {
-      .auth-card { padding: 32px 20px; }
-      .stat-box .val { font-size: 22px; }
-    }
+    .loading { text-align:center; padding:50px 20px; }
+    .spin { width:38px; height:38px; border:4px solid var(--border); border-top-color:var(--red); border-radius:50%; animation:spin .75s linear infinite; margin:0 auto 14px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .empty { text-align:center; padding:50px 20px; color:var(--muted); }
+    .empty .ico { font-size:44px; margin-bottom:10px; }
   </style>
 </head>
 <body>
 
 <nav>
-  <span class="brand">10<span>תן ביס – שוברים שלי</span></span>
-  <button class="logout-btn" id="logout-btn" onclick="logout()">התנתקות</button>
+  <span class="brand">10<em>תן ביס – שוברים שלי</em></span>
+  <button id="logout-btn" onclick="logout()">התנתקות</button>
 </nav>
 
 <div class="page">
 
-  <!-- ── CORS Warning ─────────────────────────── -->
-  <div class="cors-box" id="cors-box">
-    <strong>⚠️ חסימת CORS</strong><br>
-    הדפדפן חסם את הגישה ל-API של תן ביס. יש שתי פתרונות:
-    <ol style="margin: 10px 0 0 16px; padding: 0;">
-      <li>התקן תוסף דפדפן: <strong>CORS Unblock</strong> (Chrome/Firefox) ← <em>הקל ביותר</em></li>
-      <li>הרץ את <code>server.js</code> ופתח <code>http://localhost:3000</code> במקום הקובץ הזה</li>
-    </ol>
-  </div>
-
-  <!-- ── AUTH STEPS ─────────────────────────── -->
+  <!-- AUTH -->
   <div id="auth-section">
-
-    <!-- Step 1: Email -->
     <div class="auth-card" id="step-email">
       <div class="auth-icon">🍕</div>
       <h2>כניסה לחשבון</h2>
-      <p class="sub">הזן את האימייל של חשבון תן ביס שלך</p>
-      <label for="input-email">כתובת אימייל</label>
-      <input type="email" id="input-email" placeholder="your@email.com"
-             onkeydown="if(event.key==='Enter') sendOtp()" />
-      <div class="alert alert-error" id="err-email"></div>
-      <button class="btn-primary" id="btn-otp" onclick="sendOtp()">
-        <span>שלח קוד אימות</span>
-      </button>
+      <p class="sub">הזן את האימייל של חשבון תן ביס</p>
+      <label>כתובת אימייל</label>
+      <input type="email" id="inp-email" placeholder="your@email.com"
+             onkeydown="if(event.key==='Enter')sendOtp()" />
+      <div class="alert alert-err" id="err-email"></div>
+      <button class="btn" id="btn-otp" onclick="sendOtp()"><span>שלח קוד אימות</span></button>
     </div>
 
-    <!-- Step 2: OTP -->
     <div class="auth-card" id="step-otp" style="display:none;">
       <div class="auth-icon">📩</div>
       <h2>קוד אימות</h2>
-      <p class="sub" id="otp-hint-text"></p>
-      <label for="input-otp">קוד שהתקבל באימייל</label>
-      <input type="text" id="input-otp" placeholder="123456" maxlength="10"
-             autocomplete="one-time-code" onkeydown="if(event.key==='Enter') verifyOtp()" />
-      <div class="alert alert-error" id="err-otp"></div>
-      <button class="btn-primary" id="btn-verify" onclick="verifyOtp()">
-        <span>כניסה</span>
-      </button>
-      <button class="btn-link" onclick="showStep('step-email')">← שנה אימייל</button>
+      <p class="sub" id="otp-sub"></p>
+      <label>קוד שהתקבל באימייל</label>
+      <input type="text" id="inp-otp" placeholder="123456" maxlength="10"
+             autocomplete="one-time-code" onkeydown="if(event.key==='Enter')verifyOtp()" />
+      <div class="alert alert-err" id="err-otp"></div>
+      <button class="btn" id="btn-verify" onclick="verifyOtp()"><span>כניסה</span></button>
+      <button class="btn-link" onclick="show('step-email')">← שנה אימייל</button>
     </div>
-
   </div>
 
-  <!-- ── DASHBOARD ───────────────────────────── -->
+  <!-- DASHBOARD -->
   <div id="dashboard">
-
-    <!-- Loading -->
-    <div class="loading-wrap" id="vouchers-loading">
-      <div class="spinner"></div>
-      <p>טוען שוברים...</p>
-    </div>
-
-    <!-- Content (hidden until loaded) -->
-    <div id="vouchers-content" style="display:none;">
-
-      <!-- Summary -->
-      <div class="summary-strip">
-        <div class="stat-box active">
-          <div class="val" id="stat-active">0</div>
-          <div class="lbl">שוברים פעילים</div>
-        </div>
-        <div class="stat-box">
-          <div class="val" id="stat-total">0</div>
-          <div class="lbl">סה"כ שוברים</div>
-        </div>
-        <div class="stat-box total-val">
-          <div class="val" id="stat-amount">₪0</div>
-          <div class="lbl">שווי פעיל</div>
-        </div>
+    <div class="loading" id="v-loading"><div class="spin"></div><p>טוען שוברים...</p></div>
+    <div id="v-content" style="display:none;">
+      <div class="summary">
+        <div class="stat green"><div class="v" id="s-active">0</div><div class="l">שוברים פעילים</div></div>
+        <div class="stat"><div class="v" id="s-total">0</div><div class="l">סה"כ שוברים</div></div>
+        <div class="stat red"><div class="v" id="s-amount">₪0</div><div class="l">שווי פעיל</div></div>
       </div>
-
-      <!-- Toolbar -->
       <div class="toolbar">
-        <!-- Status filter -->
-        <div class="seg" id="status-seg">
-          <button class="active" data-val="all"    onclick="setStatus(this)">הכל</button>
-          <button               data-val="active"  onclick="setStatus(this)">פעילים</button>
-          <button               data-val="used"    onclick="setStatus(this)">נוצלו</button>
+        <div class="seg" id="seg">
+          <button class="on" data-v="all"    onclick="setSt(this)">הכל</button>
+          <button           data-v="active"  onclick="setSt(this)">פעילים</button>
+          <button           data-v="used"    onclick="setSt(this)">נוצלו</button>
         </div>
-        <!-- Store chips -->
-        <div class="store-filter" id="store-chips"></div>
+        <div class="chips" id="chips"></div>
       </div>
-
-      <!-- Voucher list -->
-      <div class="voucher-list" id="voucher-list"></div>
-      <div class="empty-state" id="no-results" style="display:none;">
-        <div class="icon">🔍</div>
-        <p>אין שוברים התואמים את הסינון</p>
-      </div>
-
+      <div class="vlist" id="vlist"></div>
+      <div class="empty" id="no-res" style="display:none;"><div class="ico">🔍</div><p>אין שוברים</p></div>
     </div>
   </div>
 
-</div><!-- /page -->
+</div>
 
 <script>
-  /* ──────────────────── CONFIG ──────────────────── */
-  const NEXT_API = 'https://www.10bis.co.il/NextApi';
-  const API_V1   = 'https://api.10bis.co.il/api/v1';
+/* ══ CONFIG ══════════════════════════════════════════════════════ */
+// Multiple proxies — tried in order until one works
+const PROXIES = [
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://proxy.cors.sh/${url}`,
+];
 
-  const RESTAURANTS = [
-    { id: 26698, name: 'שופרסל', icon: '🛒' },
-    { id: 42962, name: 'ויקטורי', icon: '🏪' },
-  ];
+const NEXT = 'https://www.10bis.co.il/NextApi';
+const V1   = 'https://api.10bis.co.il/api/v1';
 
-  /* ──────────────────── STATE ───────────────────── */
-  let state = {
-    email: '',
-    authToken: '',
-    authCookie: '',
-    refreshToken: '',
-    vouchers: [],
-    filter: { status: 'all', stores: new Set() },
+const STORES = [
+  { id: 26698, name: 'שופרסל', ico: '🛒' },
+  { id: 42962, name: 'ויקטורי', ico: '🏪' },
+];
+
+/* ══ STATE ═══════════════════════════════════════════════════════ */
+let S = {
+  email:'', authToken:'',
+  cookie:'', refresh:'', userToken:'',
+  proxyIdx: 0,
+  vouchers: [],
+  filter: { status:'all', stores: new Set() },
+};
+
+/* ══ PROXY FETCH ══════════════════════════════════════════════════ */
+// Tries proxies in order; falls back automatically on network error
+async function pFetch(url, opts = {}) {
+  // Build headers — never include Cookie (forbidden), use x-cookie instead
+  const h = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'x-requested-with': 'XMLHttpRequest',
+    ...(opts.headers || {}),
   };
 
-  /* ──────────────────── UTILS ───────────────────── */
-  function $(id) { return document.getElementById(id); }
-
-  function showError(id, msg) {
-    const el = $(id);
-    el.textContent = msg;
-    el.style.display = 'block';
+  // Pass auth via x-cookie (some proxies forward it as Cookie)
+  // AND via Authorization header (in case API accepts Bearer)
+  if (S.cookie) {
+    h['x-cookie']      = `Authorization=${S.cookie}; RefreshToken=${S.refresh}`;
+    h['authorization'] = `Bearer ${S.cookie}`;
+  }
+  if (S.userToken && !S.cookie) {
+    h['authorization'] = `Bearer ${S.userToken}`;
+    h['user-token']    = S.userToken;
   }
 
-  function clearError(id) { $(id).style.display = 'none'; }
-
-  function showStep(id) {
-    ['step-email','step-otp'].forEach(s => $(s).style.display = 'none');
-    if (id) $(id).style.display = 'block';
-  }
-
-  function setLoading(btnId, loading, label) {
-    const btn = $(btnId);
-    btn.disabled = loading;
-    btn.innerHTML = loading
-      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              style="animation:spin .75s linear infinite;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-         <span>${label}</span>`
-      : `<span>${label}</span>`;
-  }
-
-  function isCorsError(err) {
-    return err instanceof TypeError && err.message.toLowerCase().includes('fetch');
-  }
-
-  function showCorsWarning() {
-    $('cors-box').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function formatDate(str) {
-    if (!str) return '—';
+  // Try each proxy in order
+  for (let i = S.proxyIdx; i < PROXIES.length; i++) {
+    const proxyUrl = PROXIES[i](url);
     try {
-      const d = new Date(str);
-      if (isNaN(d)) return str;
-      return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
-    } catch { return str; }
-  }
-
-  function daysUntil(str) {
-    if (!str) return null;
-    const diff = new Date(str) - new Date();
-    return Math.ceil(diff / 86400000);
-  }
-
-  function formatAmount(n) {
-    if (!n && n !== 0) return '';
-    return `₪${Number(n).toLocaleString('he-IL')}`;
-  }
-
-  /* ──────────────────── AUTH ────────────────────── */
-  async function sendOtp() {
-    clearError('err-email');
-    const email = $('input-email').value.trim();
-    if (!email || !email.includes('@')) {
-      showError('err-email', 'נא להזין כתובת אימייל תקינה');
-      return;
-    }
-
-    setLoading('btn-otp', true, 'שולח...');
-
-    try {
-      const resp = await fetch(
-        `${NEXT_API}/GetUserAuthenticationDataAndSendAuthenticationCodeToUser`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ culture: 'he-IL', uiCulture: 'he', email }),
-          credentials: 'include',
-        }
-      );
-
-      const data = await resp.json();
-
-      if (!resp.ok || data.Error) {
-        showError('err-email', data.Error?.Message || data.error || 'שגיאה בשליחת הקוד');
-        return;
-      }
-
-      state.email     = email;
-      state.authToken =
-        data.Data?.ShortAuthToken ??
-        data.Data?.AuthenticationToken ??
-        data.Data?.authenticationToken ?? '';
-
-      $('otp-hint-text').textContent = `קוד אימות נשלח ל־${email}`;
-      showStep('step-otp');
-      setTimeout(() => $('input-otp').focus(), 80);
-
-    } catch (e) {
-      if (isCorsError(e)) showCorsWarning();
-      showError('err-email', isCorsError(e) ? 'חסימת CORS – ראה הנחיות למעלה' : 'שגיאת רשת: ' + e.message);
-    } finally {
-      setLoading('btn-otp', false, 'שלח קוד אימות');
-    }
-  }
-
-  async function verifyOtp() {
-    clearError('err-otp');
-    const otp = $('input-otp').value.trim();
-    if (!otp) { showError('err-otp', 'נא להזין את קוד האימות'); return; }
-
-    setLoading('btn-verify', true, 'מתחבר...');
-
-    try {
-      const resp = await fetch(`${NEXT_API}/GetUserV2`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          culture: 'he-IL',
-          uiCulture: 'he',
-          email: state.email,
-          authenticationCode: otp,
-          authenticationToken: state.authToken,
-        }),
-        credentials: 'include',
+      const r = await fetch(proxyUrl, {
+        method: opts.method || 'GET',
+        headers: h,
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
       });
-
-      const data = await resp.json();
-
-      if (!resp.ok || data.Error) {
-        showError('err-otp', data.Error?.Message || data.error || 'קוד שגוי, נסה שוב');
-        return;
-      }
-
-      // Extract cookies from response (works when server sends proper CORS headers)
-      const rawCookies = resp.headers.get('set-cookie') || '';
-      rawCookies.split(',').forEach(part => {
-        const kv = part.trim().split(';')[0];
-        if (kv.startsWith('Authorization='))
-          state.authCookie = kv.split('=').slice(1).join('=');
-        if (kv.startsWith('RefreshToken='))
-          state.refreshToken = kv.split('=').slice(1).join('=');
-      });
-
-      // Even without explicit cookies, credentials:include stores them in browser
-      $('auth-section').style.display = 'none';
-      $('dashboard').style.display    = 'block';
-      $('logout-btn').style.display   = 'flex';
-      loadVouchers();
-
+      if (r.status === 403 || r.status === 503) { S.proxyIdx = i + 1; continue; }
+      S.proxyIdx = i; // lock onto working proxy
+      return r;
     } catch (e) {
-      if (isCorsError(e)) showCorsWarning();
-      showError('err-otp', isCorsError(e) ? 'חסימת CORS – ראה הנחיות למעלה' : 'שגיאת רשת: ' + e.message);
-    } finally {
-      setLoading('btn-verify', false, 'כניסה');
+      // Network error from this proxy, try next
+      if (i === PROXIES.length - 1) throw e;
     }
   }
+  throw new Error('כל הפרוקסי נחסמו');
+}
 
-  function logout() {
-    state = { email:'', authToken:'', authCookie:'', refreshToken:'', vouchers:[], filter:{status:'all',stores:new Set()} };
-    $('input-email').value = '';
-    $('input-otp').value   = '';
-    $('auth-section').style.display = 'block';
-    $('dashboard').style.display    = 'none';
-    $('logout-btn').style.display   = 'none';
-    showStep('step-email');
-    $('vouchers-content').style.display = 'none';
-    $('vouchers-loading').style.display = 'block';
+/* Helper to extract cookies from proxy response */
+function parseCookies(resp) {
+  const raw = resp.headers.get('x-set-cookie')
+           || resp.headers.get('set-cookie')
+           || '';
+  raw.split(/,(?=[^;]+=[^;]+)/).forEach(seg => {
+    const kv = seg.trim().split(';')[0];
+    const eq = kv.indexOf('=');
+    if (eq < 0) return;
+    const k = kv.slice(0, eq).trim();
+    const v = kv.slice(eq + 1).trim();
+    if (k === 'Authorization') S.cookie  = v;
+    if (k === 'RefreshToken')  S.refresh = v;
+  });
+}
+
+/* ══ UI HELPERS ══════════════════════════════════════════════════ */
+function $(id) { return document.getElementById(id); }
+function show(id) {
+  ['step-email','step-otp'].forEach(s => $(s).style.display = 'none');
+  if ($(id)) $(id).style.display = 'block';
+}
+function setErr(id, msg) { const e=$(id); e.textContent=msg; e.style.display='block'; }
+function clrErr(id) { $(id).style.display='none'; }
+
+function setBusy(id, busy, label) {
+  const b = $(id);
+  b.disabled = busy;
+  b.innerHTML = busy
+    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="animation:spin .75s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg><span>${label}</span>`
+    : `<span>${label}</span>`;
+}
+
+/* ══ AUTH ════════════════════════════════════════════════════════ */
+async function sendOtp() {
+  clrErr('err-email');
+  const email = $('inp-email').value.trim();
+  if (!email || !email.includes('@')) { setErr('err-email','נא להזין אימייל תקין'); return; }
+
+  setBusy('btn-otp', true, 'שולח...');
+  try {
+    const r = await pFetch(`${NEXT}/GetUserAuthenticationDataAndSendAuthenticationCodeToUser`, {
+      method: 'POST',
+      body: { culture:'he-IL', uiCulture:'he', email },
+    });
+    const d = await r.json();
+    if (d.Error) throw new Error(d.Error.Message || 'שגיאה');
+
+    S.email     = email;
+    S.authToken = d.Data?.ShortAuthToken ?? d.Data?.AuthenticationToken ?? d.Data?.authenticationToken ?? '';
+    $('otp-sub').textContent = `קוד אימות נשלח ל־${email}`;
+    show('step-otp');
+    setTimeout(() => $('inp-otp').focus(), 80);
+  } catch (e) {
+    setErr('err-email', e.message || 'שגיאת רשת');
+  } finally {
+    setBusy('btn-otp', false, 'שלח קוד אימות');
   }
+}
 
-  /* ──────────────────── VOUCHERS ────────────────── */
-  async function loadVouchers() {
-    $('vouchers-loading').style.display = 'block';
-    $('vouchers-content').style.display = 'none';
+async function verifyOtp() {
+  clrErr('err-otp');
+  const otp = $('inp-otp').value.trim();
+  if (!otp) { setErr('err-otp','נא להזין קוד'); return; }
 
-    const allVouchers = [];
+  setBusy('btn-verify', true, 'מתחבר...');
+  try {
+    const r = await pFetch(`${NEXT}/GetUserV2`, {
+      method: 'POST',
+      body: { culture:'he-IL', uiCulture:'he', email:S.email, authenticationCode:otp, authenticationToken:S.authToken },
+    });
+    const d = await r.json();
+    if (d.Error) throw new Error(d.Error.Message || 'קוד שגוי');
 
-    for (const rest of RESTAURANTS) {
-      let list;
+    // Get auth from response body (some API versions return it here)
+    S.userToken = d.Data?.userToken ?? d.Data?.UserToken ?? d.Data?.token ?? '';
+    // Also try cookies from response headers
+    parseCookies(r);
+
+    $('auth-section').style.display = 'none';
+    $('dashboard').style.display    = 'block';
+    $('logout-btn').style.display   = 'flex';
+    loadVouchers();
+  } catch (e) {
+    setErr('err-otp', e.message || 'שגיאת רשת');
+  } finally {
+    setBusy('btn-verify', false, 'כניסה');
+  }
+}
+
+function logout() {
+  S = { email:'', authToken:'', cookie:'', refresh:'', userToken:'', proxyIdx:0, vouchers:[], filter:{status:'all',stores:new Set()} };
+  $('inp-email').value = '';
+  $('inp-otp').value   = '';
+  $('auth-section').style.display = 'block';
+  $('dashboard').style.display    = 'none';
+  $('logout-btn').style.display   = 'none';
+  $('v-content').style.display    = 'none';
+  $('v-loading').style.display    = 'block';
+  show('step-email');
+}
+
+/* ══ VOUCHERS ════════════════════════════════════════════════════ */
+async function loadVouchers() {
+  $('v-loading').style.display = 'block';
+  $('v-content').style.display = 'none';
+  const all = [];
+
+  for (const st of STORES) {
+    let list;
+    try {
+      const r = await pFetch(`${V1}/VoucherCards/GetUserVouchers?restaurantId=${st.id}`);
+      const d = await r.json();
+      list = d?.Data;
+    } catch { continue; }
+    if (!Array.isArray(list)) continue;
+
+    for (const v of list) {
+      const orderId = v.OrderId ?? v.orderId;
+      if (!orderId) continue;
       try {
-        const r = await fetch(
-          `${API_V1}/VoucherCards/GetUserVouchers?restaurantId=${rest.id}`,
-          { headers: { Accept: 'application/json' }, credentials: 'include' }
-        );
-        const d = await r.json();
-        list = d?.Data;
-      } catch (e) {
-        if (isCorsError(e)) showCorsWarning();
-        continue;
-      }
-
-      if (!Array.isArray(list)) continue;
-
-      for (const v of list) {
-        const orderId = v.OrderId ?? v.orderId;
-        if (!orderId) continue;
-
-        try {
-          const br = await fetch(
-            `${NEXT_API}/GetOrderBarcode?culture=he-IL&uiCulture=he&orderId=${orderId}&resId=${rest.id}`,
-            { credentials: 'include' }
-          );
-          const bd = await br.json();
-          const vouchers = bd?.Data?.Vouchers ?? [];
-
-          for (const bv of vouchers) {
-            allVouchers.push({
-              restaurant:  rest,
-              orderId,
-              used:        !!bv.Used,
-              amount:      bv.Amount ?? bv.amount ?? 0,
-              barcode:     bv.BarcodeNumber ?? bv.barcodeNumber ?? '',
-              barcodeImg:  bv.BarcodeImageUrl ?? bv.BarcodeImage ?? bv.barcodeImageUrl ?? '',
-              validUntil:  bv.ExpirationDate ?? bv.ValidityDate ?? bv.validityDate ?? '',
-            });
-          }
-        } catch { /* skip */ }
-      }
+        const br = await pFetch(`${NEXT}/GetOrderBarcode?culture=he-IL&uiCulture=he&orderId=${orderId}&resId=${st.id}`);
+        const bd = await br.json();
+        for (const bv of (bd?.Data?.Vouchers ?? [])) {
+          all.push({
+            store: st,
+            orderId,
+            used:      !!bv.Used,
+            amount:    bv.Amount ?? 0,
+            barcode:   bv.BarcodeNumber ?? '',
+            imgUrl:    bv.BarcodeImageUrl ?? bv.BarcodeImage ?? '',
+            expiry:    bv.ExpirationDate ?? bv.ValidityDate ?? '',
+          });
+        }
+      } catch { /* skip */ }
     }
-
-    state.vouchers = allVouchers;
-    buildStoreChips();
-    updateStats();
-    renderList();
-
-    $('vouchers-loading').style.display = 'none';
-    $('vouchers-content').style.display = 'block';
   }
 
-  function buildStoreChips() {
-    const stores = [...new Set(state.vouchers.map(v => v.restaurant.name))];
-    const container = $('store-chips');
-    container.innerHTML = '';
-    if (stores.length <= 1) return;
+  S.vouchers = all;
+  buildChips();
+  updateStats();
+  renderList();
+  $('v-loading').style.display = 'none';
+  $('v-content').style.display = 'block';
+}
 
-    stores.forEach(name => {
-      const rest = RESTAURANTS.find(r => r.name === name);
-      const chip = document.createElement('button');
-      chip.className = 'store-chip';
-      chip.textContent = `${rest?.icon ?? ''} ${name}`;
-      chip.dataset.store = name;
-      chip.onclick = () => toggleStore(chip, name);
-      container.appendChild(chip);
-    });
-  }
+/* ══ FILTERS / RENDER ════════════════════════════════════════════ */
+function buildChips() {
+  const stores = [...new Set(S.vouchers.map(v => v.store.name))];
+  const c = $('chips'); c.innerHTML = '';
+  if (stores.length < 2) return;
+  stores.forEach(name => {
+    const st = STORES.find(s => s.name === name);
+    const b  = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = `${st?.ico ?? ''} ${name}`;
+    b.onclick = () => { b.classList.toggle('on'); S.filter.stores[b.classList.contains('on') ? 'add' : 'delete'](name); renderList(); };
+    c.appendChild(b);
+  });
+}
 
-  function toggleStore(chip, name) {
-    if (state.filter.stores.has(name)) {
-      state.filter.stores.delete(name);
-      chip.classList.remove('active');
-    } else {
-      state.filter.stores.add(name);
-      chip.classList.add('active');
-    }
-    renderList();
-  }
+function setSt(btn) {
+  $('seg').querySelectorAll('button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  S.filter.status = btn.dataset.v;
+  renderList();
+}
 
-  function setStatus(btn) {
-    $('status-seg').querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.filter.status = btn.dataset.val;
-    renderList();
-  }
+function updateStats() {
+  const act = S.vouchers.filter(v => !v.used);
+  $('s-active').textContent = act.length;
+  $('s-total').textContent  = S.vouchers.length;
+  $('s-amount').textContent = '₪' + act.reduce((s,v)=>s+v.amount,0).toLocaleString('he-IL');
+}
 
-  function updateStats() {
-    const active = state.vouchers.filter(v => !v.used);
-    $('stat-active').textContent = active.length;
-    $('stat-total').textContent  = state.vouchers.length;
-    $('stat-amount').textContent = formatAmount(active.reduce((s, v) => s + v.amount, 0));
-  }
+function fmtDate(str) {
+  if (!str) return '—';
+  try { return new Date(str).toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'}); } catch { return str; }
+}
 
-  function renderList() {
-    const { status, stores } = state.filter;
-    let list = state.vouchers.filter(v => {
-      if (status === 'active' && v.used)  return false;
-      if (status === 'used'   && !v.used) return false;
-      if (stores.size > 0 && !stores.has(v.restaurant.name)) return false;
-      return true;
-    });
+function daysLeft(str) {
+  if (!str) return null;
+  return Math.ceil((new Date(str) - Date.now()) / 86400000);
+}
 
-    // Sort: active first, then by amount desc
-    list.sort((a, b) => {
-      if (a.used !== b.used) return a.used ? 1 : -1;
-      return b.amount - a.amount;
-    });
+function renderList() {
+  const { status, stores } = S.filter;
+  let list = S.vouchers.filter(v => {
+    if (status === 'active' && v.used)  return false;
+    if (status === 'used'   && !v.used) return false;
+    if (stores.size && !stores.has(v.store.name)) return false;
+    return true;
+  }).sort((a,b) => a.used !== b.used ? (a.used?1:-1) : b.amount - a.amount);
 
-    const container = $('voucher-list');
-    container.innerHTML = '';
+  const el = $('vlist'); el.innerHTML = '';
+  $('no-res').style.display = list.length ? 'none' : 'block';
 
-    if (list.length === 0) {
-      $('no-results').style.display = 'block';
-      return;
-    }
-    $('no-results').style.display = 'none';
+  list.forEach((v, i) => {
+    const days = daysLeft(v.expiry);
+    const soon = !v.used && days !== null && days <= 30;
+    const expTxt = v.expiry ? `תוקף עד: ${fmtDate(v.expiry)}${soon && days > 0 ? ` (${days} ימים)` : ''}` : '';
 
-    list.forEach((v, i) => {
-      const days = daysUntil(v.validUntil);
-      const soon = days !== null && days <= 30 && !v.used;
-      const expiryClass = soon ? 'expiry-label soon' : 'expiry-label';
-      const expiryText  = v.validUntil
-        ? `תוקף עד: ${formatDate(v.validUntil)}${soon && days > 0 ? ` (${days} ימים)` : ''}`
-        : '';
-
-      const card = document.createElement('div');
-      card.className = `vcard${v.used ? ' used' : ''}`;
-      card.dataset.idx = i;
-      card.innerHTML = `
-        <div class="vcard-top">
-          <div class="store-icon">${v.restaurant.icon}</div>
-          <div class="vcard-info">
-            <div class="vcard-store">${v.restaurant.name}</div>
-            <div class="vcard-meta">הזמנה #${v.orderId}</div>
-          </div>
-          <div class="vcard-right">
-            <div class="vcard-amount">${formatAmount(v.amount)}</div>
-            <div>
-              ${v.used
-                ? '<span class="badge badge-used">✓ נוצל</span>'
-                : '<span class="badge badge-active">● פעיל</span>'}
-            </div>
-          </div>
+    const card = document.createElement('div');
+    card.className = `vc${v.used?' used':''}`;
+    card.innerHTML = `
+      <div class="vc-top">
+        <div class="vc-ico">${v.store.ico}</div>
+        <div class="vc-info">
+          <div class="vc-store">${v.store.name}</div>
+          <div class="vc-meta">#${v.orderId}</div>
         </div>
-        ${(v.barcode || v.barcodeImg || expiryText) ? `
-        <div class="vcard-bottom">
-          ${(v.barcode || v.barcodeImg) ? `
-            <button class="barcode-btn" onclick="toggleBarcode(this, ${i})">📱 הצג ברקוד</button>
-          ` : ''}
-          ${expiryText ? `<span class="${expiryClass}">${expiryText}</span>` : ''}
+        <div class="vc-right">
+          <div class="vc-amt">₪${v.amount.toLocaleString('he-IL')}</div>
+          ${v.used ? '<span class="badge badge-used">✓ נוצל</span>' : '<span class="badge badge-ok">● פעיל</span>'}
         </div>
-        <div class="barcode-panel" id="bp-${i}">
-          ${v.barcodeImg ? `<img src="${v.barcodeImg}" alt="ברקוד" onerror="this.style.display='none'" />` : ''}
-          ${v.barcode ? `<div class="barcode-num">${v.barcode}</div>` : ''}
-        </div>` : ''}
-      `;
-      container.appendChild(card);
-    });
-  }
+      </div>
+      ${(v.barcode || v.imgUrl || expTxt) ? `
+      <div class="vc-foot">
+        ${(v.barcode || v.imgUrl) ? `<button class="barcode-btn" onclick="toggleBc(this,${i})">📱 הצג ברקוד</button>` : ''}
+        ${expTxt ? `<span class="exp${soon?' soon':''}">${expTxt}</span>` : ''}
+      </div>
+      <div class="bc-panel" id="bc-${i}">
+        ${v.imgUrl ? `<img src="${v.imgUrl}" alt="ברקוד" onerror="this.style.display='none'"/>` : ''}
+        ${v.barcode ? `<div class="bc-num">${v.barcode}</div>` : ''}
+      </div>` : ''}`;
+    el.appendChild(card);
+  });
+}
 
-  function toggleBarcode(btn, idx) {
-    const panel = $(`bp-${idx}`);
-    const open  = panel.style.display === 'block';
-    panel.style.display = open ? 'none' : 'block';
-    btn.textContent     = open ? '📱 הצג ברקוד' : '🙈 הסתר ברקוד';
-  }
+function toggleBc(btn, i) {
+  const p = $(`bc-${i}`);
+  const open = p.style.display === 'block';
+  p.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '📱 הצג ברקוד' : '🙈 הסתר ברקוד';
+}
 </script>
 </body>
 </html>
