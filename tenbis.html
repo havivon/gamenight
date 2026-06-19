@@ -1,94 +1,93 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>תן ביס – שוברים שלי</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --red: #e8392e; --red-dk: #c42d24; --green: #16a34a;
-      --bg: #f1f5f9; --card: #fff; --border: #e2e8f0;
-      --text: #1e293b; --muted: #64748b;
-      --shadow: 0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
-    }
-    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>תן ביס – שוברים שלי</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --red: #e8392e; --red-dk: #c42d24; --green: #16a34a;
+  --bg: #f1f5f9; --card: #fff; --border: #e2e8f0;
+  --text: #1e293b; --muted: #64748b;
+  --shadow: 0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+}
+body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-    nav { background:#fff; border-bottom:1px solid var(--border); padding:0 20px; height:52px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:10; }
-    .brand { font-size:19px; font-weight:800; color:var(--red); }
-    .brand em { color:var(--text); font-style:normal; font-weight:400; font-size:14px; margin-right:6px; }
-    #logout-btn { margin-right:auto; background:none; border:1px solid var(--border); border-radius:8px; padding:5px 13px; font-size:13px; cursor:pointer; color:var(--muted); display:none; }
-    #logout-btn:hover { border-color:var(--red); color:var(--red); }
+nav { background:#fff; border-bottom:1px solid var(--border); padding:0 20px; height:52px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:10; }
+.brand { font-size:19px; font-weight:800; color:var(--red); }
+.brand em { color:var(--text); font-style:normal; font-weight:400; font-size:14px; margin-right:6px; }
+#logout-btn { margin-right:auto; background:none; border:1px solid var(--border); border-radius:8px; padding:5px 13px; font-size:13px; cursor:pointer; color:var(--muted); display:none; }
+#logout-btn:hover { border-color:var(--red); color:var(--red); }
 
-    .page { max-width:660px; margin:0 auto; padding:28px 14px 60px; }
+.page { max-width:660px; margin:0 auto; padding:28px 14px 60px; }
 
-    /* ── AUTH ── */
-    .auth-card { background:var(--card); border-radius:20px; box-shadow:var(--shadow); padding:40px 32px; max-width:400px; margin:40px auto 0; }
-    .auth-icon { width:60px; height:60px; background:#fef2f2; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 18px; }
-    .auth-card h2 { font-size:21px; font-weight:700; text-align:center; margin-bottom:5px; }
-    .auth-card .sub { font-size:14px; color:var(--muted); text-align:center; margin-bottom:26px; }
-    label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:5px; }
-    input { width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:10px; font-size:15px; outline:none; transition:border-color .15s; direction:ltr; text-align:center; }
-    input:focus { border-color:var(--red); }
-    .btn { width:100%; padding:12px; background:var(--red); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:13px; transition:background .15s,opacity .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
-    .btn:hover:not(:disabled) { background:var(--red-dk); }
-    .btn:disabled { opacity:.55; cursor:not-allowed; }
-    .btn-link { background:none; border:none; color:var(--red); font-size:13px; cursor:pointer; margin-top:13px; display:block; text-align:center; text-decoration:underline; }
-    .alert { border-radius:10px; padding:10px 13px; font-size:13px; line-height:1.5; margin-top:12px; display:none; }
-    .alert-err  { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
-    .alert-info { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+/* ── AUTH ── */
+.auth-card { background:var(--card); border-radius:20px; box-shadow:var(--shadow); padding:40px 32px; max-width:400px; margin:40px auto 0; }
+.auth-icon { width:60px; height:60px; background:#fef2f2; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 18px; }
+.auth-card h2 { font-size:21px; font-weight:700; text-align:center; margin-bottom:5px; }
+.auth-card .sub { font-size:14px; color:var(--muted); text-align:center; margin-bottom:26px; }
+label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:5px; }
+input { width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:10px; font-size:15px; outline:none; transition:border-color .15s; direction:ltr; text-align:center; }
+input:focus { border-color:var(--red); }
+.btn { width:100%; padding:12px; background:var(--red); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:13px; transition:background .15s,opacity .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn:hover:not(:disabled) { background:var(--red-dk); }
+.btn:disabled { opacity:.55; cursor:not-allowed; }
+.btn-link { background:none; border:none; color:var(--red); font-size:13px; cursor:pointer; margin-top:13px; display:block; text-align:center; text-decoration:underline; }
+.alert { border-radius:10px; padding:10px 13px; font-size:13px; line-height:1.5; margin-top:12px; display:none; }
+.alert-err  { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+.alert-info { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 
-    /* ── DASHBOARD ── */
-    #dashboard { display:none; }
-    .summary { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
-    .stat { background:var(--card); border-radius:13px; padding:13px 18px; flex:1; min-width:110px; box-shadow:var(--shadow); }
-    .stat .v { font-size:26px; font-weight:800; }
-    .stat .l { font-size:11px; color:var(--muted); margin-top:1px; }
-    .stat.green .v { color:var(--green); }
-    .stat.red   .v { color:var(--red); }
+/* ── DASHBOARD ── */
+#dashboard { display:none; }
+.summary { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+.stat { background:var(--card); border-radius:13px; padding:13px 18px; flex:1; min-width:110px; box-shadow:var(--shadow); }
+.stat .v { font-size:26px; font-weight:800; }
+.stat .l { font-size:11px; color:var(--muted); margin-top:1px; }
+.stat.green .v { color:var(--green); }
+.stat.red   .v { color:var(--red); }
 
-    .toolbar { background:var(--card); border-radius:13px; box-shadow:var(--shadow); padding:12px 14px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
-    .seg { display:flex; background:var(--bg); border-radius:8px; padding:3px; gap:2px; }
-    .seg button { padding:5px 12px; border:none; background:none; border-radius:6px; font-size:13px; cursor:pointer; color:var(--muted); font-weight:500; transition:.15s; }
-    .seg button.on { background:#fff; color:var(--text); font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,.1); }
-    .chips { display:flex; gap:6px; flex-wrap:wrap; }
-    .chip { padding:5px 11px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font-size:13px; cursor:pointer; color:var(--muted); transition:.15s; }
-    .chip.on { border-color:var(--red); background:#fef2f2; color:var(--red); font-weight:600; }
+.toolbar { background:var(--card); border-radius:13px; box-shadow:var(--shadow); padding:12px 14px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
+.seg { display:flex; background:var(--bg); border-radius:8px; padding:3px; gap:2px; }
+.seg button { padding:5px 12px; border:none; background:none; border-radius:6px; font-size:13px; cursor:pointer; color:var(--muted); font-weight:500; transition:.15s; }
+.seg button.on { background:#fff; color:var(--text); font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+.chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chip { padding:5px 11px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font-size:13px; cursor:pointer; color:var(--muted); transition:.15s; }
+.chip.on { border-color:var(--red); background:#fef2f2; color:var(--red); font-weight:600; }
 
-    .vlist { display:flex; flex-direction:column; gap:11px; }
-    .vc { background:var(--card); border-radius:13px; box-shadow:var(--shadow); border:1.5px solid var(--border); overflow:hidden; transition:transform .1s; }
-    .vc:hover { transform:translateY(-1px); }
-    .vc.used { opacity:.6; }
-    .vc-top { padding:14px 16px; display:flex; align-items:center; gap:12px; }
-    .vc-ico { width:42px; height:42px; border-radius:10px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:21px; flex-shrink:0; }
-    .vc-info { flex:1; min-width:0; }
-    .vc-store { font-size:15px; font-weight:700; }
-    .vc-meta { font-size:12px; color:var(--muted); margin-top:2px; }
-    .vc-right { text-align:left; flex-shrink:0; }
-    .vc-amt { font-size:24px; font-weight:800; color:var(--red); }
-    .badge { display:inline-flex; align-items:center; gap:3px; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; margin-top:3px; }
-    .badge-ok   { background:#dcfce7; color:#15803d; }
-    .badge-used { background:#f1f5f9; color:#94a3b8; }
-    .vc-foot { border-top:1px solid var(--border); padding:9px 16px; display:flex; align-items:center; gap:8px; }
-    .barcode-btn { background:none; border:1px solid var(--border); border-radius:7px; padding:5px 11px; font-size:12px; cursor:pointer; color:var(--muted); transition:.15s; }
-    .barcode-btn:hover { border-color:var(--red); color:var(--red); }
-    .exp { font-size:12px; color:var(--muted); margin-right:auto; }
-    .exp.soon { color:#d97706; font-weight:600; }
-    .bc-panel { border-top:1px solid var(--border); background:#fafafa; padding:16px; text-align:center; display:none; }
-    .bc-panel img { max-width:100%; max-height:110px; border-radius:6px; }
-    .bc-num { font-family:monospace; font-size:14px; margin-top:7px; letter-spacing:2px; }
+.vlist { display:flex; flex-direction:column; gap:11px; }
+.vc { background:var(--card); border-radius:13px; box-shadow:var(--shadow); border:1.5px solid var(--border); overflow:hidden; }
+.vc.used { opacity:.6; }
+.vc-top { padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.vc-ico { width:42px; height:42px; border-radius:10px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:21px; flex-shrink:0; }
+.vc-info { flex:1; min-width:0; }
+.vc-store { font-size:15px; font-weight:700; }
+.vc-meta { font-size:12px; color:var(--muted); margin-top:2px; }
+.vc-right { text-align:left; flex-shrink:0; }
+.vc-amt { font-size:24px; font-weight:800; color:var(--red); }
+.badge { display:inline-flex; align-items:center; gap:3px; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; margin-top:3px; }
+.badge-ok   { background:#dcfce7; color:#15803d; }
+.badge-used { background:#f1f5f9; color:#94a3b8; }
+.vc-foot { border-top:1px solid var(--border); padding:9px 16px; display:flex; align-items:center; gap:8px; }
+.barcode-btn { background:none; border:1px solid var(--border); border-radius:7px; padding:5px 11px; font-size:12px; cursor:pointer; color:var(--muted); transition:.15s; }
+.barcode-btn:hover { border-color:var(--red); color:var(--red); }
+.exp { font-size:12px; color:var(--muted); margin-right:auto; }
+.exp.soon { color:#d97706; font-weight:600; }
+.bc-panel { border-top:1px solid var(--border); background:#fafafa; padding:16px; text-align:center; display:none; }
+.bc-panel img { max-width:100%; max-height:110px; border-radius:6px; }
+.bc-num { font-family:monospace; font-size:14px; margin-top:7px; letter-spacing:2px; }
 
-    .loading { text-align:center; padding:50px 20px; }
-    .spin { width:38px; height:38px; border:4px solid var(--border); border-top-color:var(--red); border-radius:50%; animation:spin .75s linear infinite; margin:0 auto 14px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .empty { text-align:center; padding:50px 20px; color:var(--muted); }
-    .empty .ico { font-size:44px; margin-bottom:10px; }
-  </style>
+.loading { text-align:center; padding:50px 20px; }
+.spin { width:38px; height:38px; border:4px solid var(--border); border-top-color:var(--red); border-radius:50%; animation:spin .75s linear infinite; margin:0 auto 14px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.empty { text-align:center; padding:50px 20px; color:var(--muted); }
+.empty .ico { font-size:44px; margin-bottom:10px; }
+</style>
 </head>
 <body>
 
 <nav>
-  <span class="brand">10<em>תן ביס – שוברים שלי</em></span>
+  <span class="brand">🍕<em>תן ביס – שוברים שלי</em></span>
   <button id="logout-btn" onclick="logout()">התנתקות</button>
 </nav>
 
@@ -102,7 +101,7 @@
       <p class="sub">הזן את האימייל של חשבון תן ביס</p>
       <label>כתובת אימייל</label>
       <input type="email" id="inp-email" placeholder="your@email.com"
-             onkeydown="if(event.key==='Enter')sendOtp()" />
+             onkeydown="if(event.key==='Enter')sendOtp()" autocomplete="email" />
       <div class="alert alert-err" id="err-email"></div>
       <button class="btn" id="btn-otp" onclick="sendOtp()"><span>שלח קוד אימות</span></button>
     </div>
@@ -113,10 +112,11 @@
       <p class="sub" id="otp-sub"></p>
       <label>קוד שהתקבל באימייל</label>
       <input type="text" id="inp-otp" placeholder="123456" maxlength="10"
-             autocomplete="one-time-code" onkeydown="if(event.key==='Enter')verifyOtp()" />
+             inputmode="numeric" autocomplete="one-time-code"
+             onkeydown="if(event.key==='Enter')verifyOtp()" />
       <div class="alert alert-err" id="err-otp"></div>
       <button class="btn" id="btn-verify" onclick="verifyOtp()"><span>כניסה</span></button>
-      <button class="btn-link" onclick="show('step-email')">← שנה אימייל</button>
+      <button class="btn-link" onclick="backToEmail()">← שנה אימייל</button>
     </div>
   </div>
 
@@ -131,9 +131,9 @@
       </div>
       <div class="toolbar">
         <div class="seg" id="seg">
-          <button class="on" data-v="all"    onclick="setSt(this)">הכל</button>
-          <button           data-v="active"  onclick="setSt(this)">פעילים</button>
-          <button           data-v="used"    onclick="setSt(this)">נוצלו</button>
+          <button class="on" data-v="all"   onclick="setSt(this)">הכל</button>
+          <button           data-v="active" onclick="setSt(this)">פעילים</button>
+          <button           data-v="used"   onclick="setSt(this)">נוצלו</button>
         </div>
         <div class="chips" id="chips"></div>
       </div>
@@ -145,228 +145,149 @@
 </div>
 
 <script>
-/* ══ CONFIG ══════════════════════════════════════════════════════ */
-// Multiple proxies — tried in order until one works
-const PROXIES = [
-  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-  url => `https://thingproxy.freeboard.io/fetch/${url}`,
-  url => `https://cors.deno.dev/${url}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-];
-
-const NEXT = 'https://www.10bis.co.il/NextApi';
-const V1   = 'https://api.10bis.co.il/api/v1';
+'use strict';
 
 const STORES = [
   { id: 26698, name: 'שופרסל', ico: '🛒' },
   { id: 42962, name: 'ויקטורי', ico: '🏪' },
 ];
 
-/* ══ STATE ═══════════════════════════════════════════════════════ */
-let S = {
-  email:'', authToken:'',
-  cookie:'', refresh:'', userToken:'',
-  proxyIdx: 0,
-  vouchers: [],
-  filter: { status:'all', stores: new Set() },
-};
+let auth = null;
+try { auth = JSON.parse(sessionStorage.getItem('tbAuth') || 'null'); } catch {}
 
-/* ══ PROXY FETCH ══════════════════════════════════════════════════ */
-// Tries proxies in order; falls back automatically on network error
-async function pFetch(url, opts = {}) {
-  // Build headers — never include Cookie (forbidden), use x-cookie instead
-  const h = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'x-requested-with': 'XMLHttpRequest',
-    ...(opts.headers || {}),
-  };
+let vouchers = [];
+let filterStatus = 'all';
+let filterStores = new Set();
 
-  // Pass auth via x-cookie (some proxies forward it as Cookie)
-  // AND via Authorization header (in case API accepts Bearer)
-  if (S.cookie) {
-    h['x-cookie']      = `Authorization=${S.cookie}; RefreshToken=${S.refresh}`;
-    h['authorization'] = `Bearer ${S.cookie}`;
-  }
-  if (S.userToken && !S.cookie) {
-    h['authorization'] = `Bearer ${S.userToken}`;
-    h['user-token']    = S.userToken;
-  }
-
-  // Try each proxy in order, with 8s timeout per attempt
-  for (let i = S.proxyIdx; i < PROXIES.length; i++) {
-    const proxyUrl = PROXIES[i](url);
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000);
-    try {
-      const r = await fetch(proxyUrl, {
-        method: opts.method || 'GET',
-        headers: h,
-        signal: ctrl.signal,
-        body: opts.body ? JSON.stringify(opts.body) : undefined,
-      });
-      clearTimeout(timer);
-      if (r.status === 403 || r.status === 503) { S.proxyIdx = i + 1; continue; }
-
-      // Read body once and check if proxy returned its own HTML error page
-      const text = await r.text();
-      if (text.trimStart().startsWith('<')) {
-        // Proxy returned HTML instead of JSON — try next proxy
-        S.proxyIdx = i + 1;
-        continue;
-      }
-
-      S.proxyIdx = i; // lock onto working proxy
-      // Wrap text back into a Response-like object so callers can call .json()
-      return { ok: r.ok, status: r.status, headers: r.headers, json: () => JSON.parse(text), text: () => text };
-    } catch (e) {
-      clearTimeout(timer);
-      // Timeout or network error — try next proxy
-      if (i === PROXIES.length - 1) throw new Error('לא הצלחנו להגיע ל-API של תן ביס. נסה שוב מאוחר יותר.');
-    }
-  }
-  throw new Error('כל הפרוקסי נחסמו');
-}
-
-/* Helper to extract cookies from proxy response */
-function parseCookies(resp) {
-  const raw = resp.headers.get('x-set-cookie')
-           || resp.headers.get('set-cookie')
-           || '';
-  raw.split(/,(?=[^;]+=[^;]+)/).forEach(seg => {
-    const kv = seg.trim().split(';')[0];
-    const eq = kv.indexOf('=');
-    if (eq < 0) return;
-    const k = kv.slice(0, eq).trim();
-    const v = kv.slice(eq + 1).trim();
-    if (k === 'Authorization') S.cookie  = v;
-    if (k === 'RefreshToken')  S.refresh = v;
-  });
-}
-
-/* ══ UI HELPERS ══════════════════════════════════════════════════ */
 function $(id) { return document.getElementById(id); }
-function show(id) {
+
+function showStep(id) {
   ['step-email','step-otp'].forEach(s => $(s).style.display = 'none');
   if ($(id)) $(id).style.display = 'block';
 }
+
 function setErr(id, msg) { const e=$(id); e.textContent=msg; e.style.display='block'; }
 function clrErr(id) { $(id).style.display='none'; }
 
 function setBusy(id, busy, label) {
   const b = $(id);
   b.disabled = busy;
-  b.innerHTML = busy
-    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="animation:spin .75s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg><span>${label}</span>`
-    : `<span>${label}</span>`;
+  b.innerHTML = busy ? `<span>${label}...</span>` : `<span>${label}</span>`;
 }
 
-/* ══ AUTH ════════════════════════════════════════════════════════ */
+// Restore session
+if (auth) {
+  $('auth-section').style.display = 'none';
+  $('dashboard').style.display    = 'block';
+  $('logout-btn').style.display   = 'flex';
+  loadVouchers();
+}
+
+/* ── AUTH ── */
 async function sendOtp() {
   clrErr('err-email');
   const email = $('inp-email').value.trim();
   if (!email || !email.includes('@')) { setErr('err-email','נא להזין אימייל תקין'); return; }
 
-  setBusy('btn-otp', true, 'שולח...');
+  setBusy('btn-otp', true, 'שולח');
   try {
-    const r = await pFetch(`${NEXT}/GetUserAuthenticationDataAndSendAuthenticationCodeToUser`, {
+    const r = await fetch('/api/send-otp', {
       method: 'POST',
-      body: { culture:'he-IL', uiCulture:'he', email },
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     });
     const d = await r.json();
-    if (d.Error) throw new Error(d.Error.Message || 'שגיאה');
 
-    S.email     = email;
-    S.authToken = d.Data?.ShortAuthToken ?? d.Data?.AuthenticationToken ?? d.Data?.authenticationToken ?? '';
-    $('otp-sub').textContent = `קוד אימות נשלח ל־${email}`;
-    show('step-otp');
+    // Success if no hard error — API sends OTP regardless
+    const token = d?.Data?.authenticationToken ?? d?.Data?.AuthenticationToken ?? d?.Data?.ShortAuthToken ?? '';
+    sessionStorage.setItem('tbOtpToken', token);
+    sessionStorage.setItem('tbEmail', email);
+
+    if (d?.Errors?.length && d.Errors[0]?.ErrorDesc) {
+      throw new Error(d.Errors[0].ErrorDesc);
+    }
+
+    $('otp-sub').textContent = `קוד נשלח ל: ${email}`;
+    showStep('step-otp');
     setTimeout(() => $('inp-otp').focus(), 80);
   } catch (e) {
-    setErr('err-email', e.message || 'שגיאת רשת');
+    setErr('err-email', e.message || 'שגיאת שרת, נסה שוב');
   } finally {
     setBusy('btn-otp', false, 'שלח קוד אימות');
   }
 }
 
+function backToEmail() {
+  showStep('step-email');
+  clrErr('err-otp');
+}
+
 async function verifyOtp() {
   clrErr('err-otp');
-  const otp = $('inp-otp').value.trim();
+  const otp   = $('inp-otp').value.trim();
+  const email = sessionStorage.getItem('tbEmail') || '';
+  const authenticationToken = sessionStorage.getItem('tbOtpToken') || '';
   if (!otp) { setErr('err-otp','נא להזין קוד'); return; }
 
-  setBusy('btn-verify', true, 'מתחבר...');
+  setBusy('btn-verify', true, 'מתחבר');
   try {
-    const r = await pFetch(`${NEXT}/GetUserV2`, {
+    const r = await fetch('/api/verify-otp', {
       method: 'POST',
-      body: { culture:'he-IL', uiCulture:'he', email:S.email, authenticationCode:otp, authenticationToken:S.authToken },
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp, authenticationToken }),
     });
-    const d = await r.json();
-    if (d.Error) throw new Error(d.Error.Message || 'קוד שגוי');
+    const res = await r.json();
 
-    // Get auth from response body (some API versions return it here)
-    S.userToken = d.Data?.userToken ?? d.Data?.UserToken ?? d.Data?.token ?? '';
-    // Also try cookies from response headers
-    parseCookies(r);
+    if (!res.authCookie && !res.refreshToken && !res.userToken) {
+      const msg = res?.data?.Errors?.[0]?.ErrorDesc ?? 'קוד שגוי או פג תוקף';
+      throw new Error(msg);
+    }
+
+    auth = { authCookie: res.authCookie, refreshToken: res.refreshToken, userToken: res.userToken };
+    sessionStorage.setItem('tbAuth', JSON.stringify(auth));
 
     $('auth-section').style.display = 'none';
     $('dashboard').style.display    = 'block';
     $('logout-btn').style.display   = 'flex';
     loadVouchers();
   } catch (e) {
-    setErr('err-otp', e.message || 'שגיאת רשת');
+    setErr('err-otp', e.message || 'שגיאת שרת');
   } finally {
     setBusy('btn-verify', false, 'כניסה');
   }
 }
 
 function logout() {
-  S = { email:'', authToken:'', cookie:'', refresh:'', userToken:'', proxyIdx:0, vouchers:[], filter:{status:'all',stores:new Set()} };
-  $('inp-email').value = '';
-  $('inp-otp').value   = '';
+  sessionStorage.removeItem('tbAuth');
+  sessionStorage.removeItem('tbEmail');
+  sessionStorage.removeItem('tbOtpToken');
+  auth = null; vouchers = [];
+  $('inp-email').value = ''; $('inp-otp').value = '';
   $('auth-section').style.display = 'block';
   $('dashboard').style.display    = 'none';
   $('logout-btn').style.display   = 'none';
   $('v-content').style.display    = 'none';
   $('v-loading').style.display    = 'block';
-  show('step-email');
+  showStep('step-email');
 }
 
-/* ══ VOUCHERS ════════════════════════════════════════════════════ */
+/* ── VOUCHERS ── */
 async function loadVouchers() {
   $('v-loading').style.display = 'block';
   $('v-content').style.display = 'none';
-  const all = [];
-
-  for (const st of STORES) {
-    let list;
-    try {
-      const r = await pFetch(`${V1}/VoucherCards/GetUserVouchers?restaurantId=${st.id}`);
-      const d = await r.json();
-      list = d?.Data;
-    } catch { continue; }
-    if (!Array.isArray(list)) continue;
-
-    for (const v of list) {
-      const orderId = v.OrderId ?? v.orderId;
-      if (!orderId) continue;
-      try {
-        const br = await pFetch(`${NEXT}/GetOrderBarcode?culture=he-IL&uiCulture=he&orderId=${orderId}&resId=${st.id}`);
-        const bd = await br.json();
-        for (const bv of (bd?.Data?.Vouchers ?? [])) {
-          all.push({
-            store: st,
-            orderId,
-            used:      !!bv.Used,
-            amount:    bv.Amount ?? 0,
-            barcode:   bv.BarcodeNumber ?? '',
-            imgUrl:    bv.BarcodeImageUrl ?? bv.BarcodeImage ?? '',
-            expiry:    bv.ExpirationDate ?? bv.ValidityDate ?? '',
-          });
-        }
-      } catch { /* skip */ }
-    }
+  try {
+    const r = await fetch('/api/vouchers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(auth),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    vouchers = data.vouchers ?? [];
+  } catch (e) {
+    $('v-loading').innerHTML = `<p style="color:#b91c1c">שגיאה בטעינת שוברים: ${e.message}</p><button class="btn" style="max-width:200px;margin:16px auto 0" onclick="loadVouchers()">נסה שוב</button>`;
+    return;
   }
-
-  S.vouchers = all;
   buildChips();
   updateStats();
   renderList();
@@ -374,9 +295,9 @@ async function loadVouchers() {
   $('v-content').style.display = 'block';
 }
 
-/* ══ FILTERS / RENDER ════════════════════════════════════════════ */
+/* ── FILTERS / RENDER ── */
 function buildChips() {
-  const stores = [...new Set(S.vouchers.map(v => v.store.name))];
+  const stores = [...new Set(vouchers.map(v => v.store))];
   const c = $('chips'); c.innerHTML = '';
   if (stores.length < 2) return;
   stores.forEach(name => {
@@ -384,7 +305,11 @@ function buildChips() {
     const b  = document.createElement('button');
     b.className = 'chip';
     b.textContent = `${st?.ico ?? ''} ${name}`;
-    b.onclick = () => { b.classList.toggle('on'); S.filter.stores[b.classList.contains('on') ? 'add' : 'delete'](name); renderList(); };
+    b.onclick = () => {
+      b.classList.toggle('on');
+      filterStores[b.classList.contains('on') ? 'add' : 'delete'](name);
+      renderList();
+    };
     c.appendChild(b);
   });
 }
@@ -392,14 +317,14 @@ function buildChips() {
 function setSt(btn) {
   $('seg').querySelectorAll('button').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
-  S.filter.status = btn.dataset.v;
+  filterStatus = btn.dataset.v;
   renderList();
 }
 
 function updateStats() {
-  const act = S.vouchers.filter(v => !v.used);
+  const act = vouchers.filter(v => !v.used);
   $('s-active').textContent = act.length;
-  $('s-total').textContent  = S.vouchers.length;
+  $('s-total').textContent  = vouchers.length;
   $('s-amount').textContent = '₪' + act.reduce((s,v)=>s+v.amount,0).toLocaleString('he-IL');
 }
 
@@ -414,11 +339,10 @@ function daysLeft(str) {
 }
 
 function renderList() {
-  const { status, stores } = S.filter;
-  let list = S.vouchers.filter(v => {
-    if (status === 'active' && v.used)  return false;
-    if (status === 'used'   && !v.used) return false;
-    if (stores.size && !stores.has(v.store.name)) return false;
+  let list = vouchers.filter(v => {
+    if (filterStatus === 'active' && v.used)  return false;
+    if (filterStatus === 'used'   && !v.used) return false;
+    if (filterStores.size && !filterStores.has(v.store)) return false;
     return true;
   }).sort((a,b) => a.used !== b.used ? (a.used?1:-1) : b.amount - a.amount);
 
@@ -426,32 +350,34 @@ function renderList() {
   $('no-res').style.display = list.length ? 'none' : 'block';
 
   list.forEach((v, i) => {
+    const st   = STORES.find(s => s.name === v.store) ?? { ico: '🏪' };
     const days = daysLeft(v.expiry);
     const soon = !v.used && days !== null && days <= 30;
     const expTxt = v.expiry ? `תוקף עד: ${fmtDate(v.expiry)}${soon && days > 0 ? ` (${days} ימים)` : ''}` : '';
+    const hasCode = v.barcode || v.img;
 
     const card = document.createElement('div');
     card.className = `vc${v.used?' used':''}`;
     card.innerHTML = `
       <div class="vc-top">
-        <div class="vc-ico">${v.store.ico}</div>
+        <div class="vc-ico">${st.ico}</div>
         <div class="vc-info">
-          <div class="vc-store">${v.store.name}</div>
-          <div class="vc-meta">#${v.orderId}</div>
+          <div class="vc-store">${v.store}</div>
+          <div class="vc-meta">${v.orderId ? '#'+v.orderId : ''}</div>
         </div>
         <div class="vc-right">
           <div class="vc-amt">₪${v.amount.toLocaleString('he-IL')}</div>
           ${v.used ? '<span class="badge badge-used">✓ נוצל</span>' : '<span class="badge badge-ok">● פעיל</span>'}
         </div>
       </div>
-      ${(v.barcode || v.imgUrl || expTxt) ? `
+      ${(hasCode || expTxt) ? `
       <div class="vc-foot">
-        ${(v.barcode || v.imgUrl) ? `<button class="barcode-btn" onclick="toggleBc(this,${i})">📱 הצג ברקוד</button>` : ''}
+        ${hasCode ? `<button class="barcode-btn" onclick="toggleBc(this,${i})">📱 הצג ברקוד</button>` : ''}
         ${expTxt ? `<span class="exp${soon?' soon':''}">${expTxt}</span>` : ''}
       </div>
       <div class="bc-panel" id="bc-${i}">
-        ${v.imgUrl ? `<img src="${v.imgUrl}" alt="ברקוד" onerror="this.style.display='none'"/>` : ''}
-        ${v.barcode ? `<div class="bc-num">${v.barcode}</div>` : ''}
+        ${v.img    ? `<img src="${v.img}" alt="ברקוד" onerror="this.style.display='none'"/>` : ''}
+        ${v.barcode? `<div class="bc-num">${v.barcode}</div>` : ''}
       </div>` : ''}`;
     el.appendChild(card);
   });
