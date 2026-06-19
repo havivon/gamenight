@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>התקנת תן ביס שוברים</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f1f5f9; min-height: 100vh; padding: 24px 16px; direction: rtl; }
+    h1 { font-size: 22px; font-weight: 800; color: #e8392e; margin-bottom: 6px; }
+    .sub { font-size: 14px; color: #64748b; margin-bottom: 28px; }
+    .step { background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .step-num { width: 32px; height: 32px; background: #e8392e; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; margin-bottom: 12px; }
+    .step h2 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: #475569; line-height: 1.6; }
+    .step code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+    .copy-btn {
+      width: 100%;
+      padding: 16px;
+      background: #e8392e;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background .15s;
+    }
+    .copy-btn:active { background: #c42d24; }
+    .copy-btn.done { background: #16a34a; }
+
+    .code-box {
+      background: #0f172a;
+      color: #94a3b8;
+      border-radius: 10px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 11px;
+      word-break: break-all;
+      line-height: 1.5;
+      margin-top: 12px;
+      max-height: 80px;
+      overflow: hidden;
+      position: relative;
+    }
+    .code-box::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 30px;
+      background: linear-gradient(transparent, #0f172a);
+    }
+
+    .img-hint {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #92400e;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    .big-arrow { font-size: 28px; text-align: center; margin: 4px 0; }
+  </style>
+</head>
+<body>
+
+  <h1>🍕 תן ביס – שוברים שלי</h1>
+  <p class="sub">מדריך התקנה חד-פעמי · 4 שלבים פשוטים</p>
+
+  <!-- Step 1 -->
+  <div class="step">
+    <div class="step-num">1</div>
+    <h2>העתק את הקוד</h2>
+    <p>לחץ על הכפתור הזה כדי להעתיק את קוד הסימניה:</p>
+    <button class="copy-btn" id="copyBtn" onclick="copyCode()">
+      📋 העתק קוד
+    </button>
+    <div class="code-box" id="codePreview">טוען...</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <div class="step-num">2</div>
+    <h2>הוסף סימניה לאתר תן ביס</h2>
+    <p>
+      פתח <strong>www.10bis.co.il</strong> (כבר מחובר?) ← לחץ <strong>⋮</strong> (שלוש נקודות) ← <strong>"הוסף לסימניות"</strong> ← שנה את השם ל-<code>תן ביס שוברים</code> ← <strong>שמור</strong>
+    </p>
+    <div class="img-hint">⚠️ חשוב: שמור עם השם הזה בדיוק כדי שתמצא אותה בקלות</div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <div class="step-num">3</div>
+    <h2>ערוך את הסימניה שיצרת</h2>
+    <p>
+      לחץ <strong>⋮</strong> ← <strong>סימניות</strong> ← מצא <code>תן ביס שוברים</code> ← לחץ עליה <strong>לחיצה ארוכה</strong> ← <strong>ערוך סימניה</strong>
+    </p>
+    <div class="big-arrow">↓</div>
+    <p>
+      <strong>מחק</strong> את כל מה שכתוב בשדה ה-URL ← <strong>הדבק</strong> (הקוד שהעתקת בשלב 1) ← <strong>שמור</strong>
+    </p>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <div class="step-num">4</div>
+    <h2>שימוש – כל פעם שתרצה לראות שוברים</h2>
+    <p>
+      היכנס ל-<strong>www.10bis.co.il</strong> ← לחץ <strong>⋮</strong> ← <strong>סימניות</strong> ← לחץ על <code>תן ביס שוברים</code>
+    </p>
+    <div class="img-hint">✅ פופ-אפ עם כל השוברים שלך ייפתח מיד!</div>
+  </div>
+
+<script>
+const CODE = `javascript:(async function(){const STORES=[{id:26698,name:'שופרסל'},{id:42962,name:'ויקטורי'}];const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;direction:rtl';const md=document.createElement('div');md.style.cssText='background:#fff;border-radius:20px;padding:20px 16px;max-width:460px;width:93%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)';md.innerHTML='<div style="display:flex;align-items:center;margin-bottom:14px"><b style="font-size:18px;color:#e8392e">🍕 שוברים תן ביס</b><button onclick="this.closest(\'[data-tenbis]\').remove()" style="margin-right:auto;background:none;border:1px solid #ddd;border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer">סגור ✕</button></div><p style="color:#888;font-size:14px">⏳ טוען שוברים...</p>';ov.setAttribute('data-tenbis','1');ov.appendChild(md);document.body.appendChild(ov);ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});const all=[];for(const st of STORES){let list;try{const r=await fetch('https://api.10bis.co.il/api/v1/VoucherCards/GetUserVouchers?restaurantId='+st.id,{credentials:'include'});list=(await r.json())?.Data}catch{continue}if(!Array.isArray(list))continue;for(const v of list){const oid=v.OrderId||v.orderId;if(!oid)continue;try{const br=await fetch('/NextApi/GetOrderBarcode?culture=he-IL&uiCulture=he&orderId='+oid+'&resId='+st.id,{credentials:'include'});const bd=await br.json();for(const bv of(bd?.Data?.Vouchers||[])){all.push({store:st.name,used:!!bv.Used,amount:bv.Amount||0,barcode:bv.BarcodeNumber||'',img:bv.BarcodeImageUrl||bv.BarcodeImage||'',exp:bv.ExpirationDate||bv.ValidityDate||''})}}catch{}}}const act=all.filter(v=>!v.used);const fd=s=>{try{return new Date(s).toLocaleDateString('he-IL')}catch{return s||'—'}};const cards=all.sort((a,b)=>a.used-b.used).map((v,i)=>'<div style="border:1.5px solid '+(v.used?'#e2e8f0':'#86efac')+';border-radius:12px;padding:13px;margin-bottom:10px;'+(v.used?'opacity:.55':'')+'">'+'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:15px">'+v.store+'</span><span style="font-size:22px;font-weight:800;color:#e8392e">₪'+v.amount.toLocaleString('he-IL')+'</span></div>'+'<div style="margin-top:6px"><span style="background:'+(v.used?'#f1f5f9':'#dcfce7')+';color:'+(v.used?'#94a3b8':'#15803d')+';padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700">'+(v.used?'✓ נוצל':'● פעיל')+'</span> <span style="font-size:12px;color:#888">עד: '+fd(v.exp)+'</span></div>'+(v.barcode||v.img?'<button onclick="var p=document.getElementById(\\'bc'+i+'\\');p.style.display=p.style.display===\\'block\\'?\\'none\\':\\'block\\';this.textContent=p.style.display===\\'block\\'?\\'🙈 הסתר\\':\\'📱 ברקוד\\'" style="margin-top:8px;background:none;border:1px solid #ddd;border-radius:7px;padding:5px 11px;font-size:12px;cursor:pointer">📱 ברקוד</button><div id="bc'+i+'" style="display:none;text-align:center;margin-top:8px;padding:10px;background:#f8fafc;border-radius:8px">'+(v.img?'<img src="'+v.img+'" style="max-width:100%;border-radius:6px" onerror="this.style.display=\\'none\\'">'':'')+(v.barcode?'<div style="font-family:monospace;font-size:15px;margin-top:6px;letter-spacing:2px;word-break:break-all">'+v.barcode+'</div>':'')+'</div>':'')+  '</div>').join('');md.innerHTML='<div style="display:flex;align-items:center;margin-bottom:14px"><b style="font-size:18px;color:#e8392e">🍕 שוברים תן ביס</b><button onclick="this.closest(\'[data-tenbis]\').remove()" style="margin-right:auto;background:none;border:1px solid #ddd;border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer">סגור ✕</button></div>'+(all.length===0?'<p style="text-align:center;padding:30px;color:#888">לא נמצאו שוברים.<br>ודא שאתה מחובר ל-10bis.co.il</p>':'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:14px"><b style="color:#15803d">✅ '+act.length+' שוברים פעילים</b> · שווי: <b style="color:#e8392e">₪'+act.reduce((s,v)=>s+v.amount,0).toLocaleString('he-IL')+'</b> · סה"כ: '+all.length+'</div>'+cards);})();`;
+
+document.getElementById('codePreview').textContent = CODE.slice(0, 200) + '...';
+
+async function copyCode() {
+  const btn = document.getElementById('copyBtn');
+  try {
+    await navigator.clipboard.writeText(CODE);
+    btn.textContent = '✅ הועתק! עכשיו עבור לשלב 2';
+    btn.classList.add('done');
+  } catch (e) {
+    // Fallback: select from textarea
+    const ta = document.createElement('textarea');
+    ta.value = CODE;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    btn.textContent = '✅ הועתק! עכשיו עבור לשלב 2';
+    btn.classList.add('done');
+  }
+}
+</script>
+</body>
+</html>
