@@ -207,8 +207,18 @@ async function pFetch(url, opts = {}) {
       });
       clearTimeout(timer);
       if (r.status === 403 || r.status === 503) { S.proxyIdx = i + 1; continue; }
+
+      // Read body once and check if proxy returned its own HTML error page
+      const text = await r.text();
+      if (text.trimStart().startsWith('<')) {
+        // Proxy returned HTML instead of JSON — try next proxy
+        S.proxyIdx = i + 1;
+        continue;
+      }
+
       S.proxyIdx = i; // lock onto working proxy
-      return r;
+      // Wrap text back into a Response-like object so callers can call .json()
+      return { ok: r.ok, status: r.status, headers: r.headers, json: () => JSON.parse(text), text: () => text };
     } catch (e) {
       clearTimeout(timer);
       // Timeout or network error — try next proxy
