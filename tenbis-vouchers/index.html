@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>תן ביס – שוברים</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #e8392e;
+    }
+
+    .logo p {
+      color: #666;
+      font-size: 15px;
+      margin-top: 4px;
+    }
+
+    .step { display: none; }
+    .step.active { display: block; }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    input[type="email"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      direction: ltr;
+    }
+
+    input:focus { border-color: #e8392e; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: #e8392e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .btn:hover { background: #c62e24; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .hint {
+      font-size: 13px;
+      color: #888;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .error-msg {
+      background: #fdecea;
+      color: #c62e24;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      margin-top: 14px;
+      display: none;
+    }
+
+    /* Voucher list */
+    .summary {
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      background: #f8fffe;
+      border: 1.5px solid #d0f0e8;
+      border-radius: 10px;
+    }
+
+    .summary h2 {
+      font-size: 16px;
+      color: #1a7a5e;
+      margin-bottom: 4px;
+    }
+
+    .summary p { font-size: 14px; color: #444; }
+
+    .voucher-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .voucher-card {
+      border: 1.5px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 16px 18px;
+      position: relative;
+    }
+
+    .voucher-card.unused { border-color: #2ecc71; background: #f4fdf7; }
+    .voucher-card.used   { border-color: #ddd;    background: #fafafa; opacity: 0.7; }
+
+    .voucher-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .voucher-store { font-weight: 700; font-size: 16px; color: #222; }
+    .voucher-amount { font-size: 22px; font-weight: 800; color: #e8392e; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge-valid { background: #d4f5e2; color: #1a7a5e; }
+    .badge-used  { background: #eee;    color: #888; }
+
+    .voucher-meta { font-size: 13px; color: #555; margin-top: 6px; }
+    .voucher-meta span { margin-left: 16px; }
+
+    .barcode-toggle {
+      background: none;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 10px;
+      color: #555;
+    }
+
+    .barcode-toggle:hover { border-color: #e8392e; color: #e8392e; }
+
+    .barcode-img {
+      display: none;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .barcode-img img {
+      max-width: 100%;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+
+    .barcode-num {
+      font-size: 13px;
+      color: #555;
+      margin-top: 6px;
+      direction: ltr;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .empty-state svg { margin-bottom: 14px; }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: #888;
+    }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 4px solid #eee;
+      border-top-color: #e8392e;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: #e8392e;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 14px;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <h1>🍕 תן ביס – שוברים</h1>
+      <p>בדיקת שוברים פעילים בחשבון שלך</p>
+    </div>
+
+    <!-- Step 1: Email -->
+    <div class="step active" id="step-email">
+      <label for="email">כתובת אימייל של חשבון תן ביס</label>
+      <input type="email" id="email" placeholder="your@email.com" autocomplete="email" />
+      <p class="hint">יישלח קוד אימות לאימייל שלך</p>
+      <div class="error-msg" id="err-email"></div>
+      <button class="btn" id="btn-send-otp" onclick="sendOtp()">שלח קוד אימות</button>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div class="step" id="step-otp">
+      <label for="otp">קוד אימות</label>
+      <input type="text" id="otp" placeholder="הכנס את הקוד שנשלח לאימייל" maxlength="10" />
+      <p class="hint" id="otp-hint"></p>
+      <div class="error-msg" id="err-otp"></div>
+      <button class="btn" id="btn-verify-otp" onclick="verifyOtp()">כניסה ובדיקת שוברים</button>
+      <button class="back-btn" onclick="goBack('step-email')">← חזרה</button>
+    </div>
+
+    <!-- Step 3: Results -->
+    <div class="step" id="step-results">
+      <div id="loading-state" class="loading">
+        <div class="spinner"></div>
+        <p>מושך שוברים מתן ביס...</p>
+      </div>
+      <div id="results-content" style="display:none;"></div>
+      <button class="back-btn" style="margin-top:20px;" onclick="goBack('step-email'); resetState()">← כניסה מחדש</button>
+    </div>
+  </div>
+
+  <script>
+    let authData = {};
+
+    function showStep(id) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function goBack(step) { showStep(step); }
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function clearError(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function resetState() {
+      authData = {};
+      document.getElementById('email').value = '';
+      document.getElementById('otp').value = '';
+      document.getElementById('results-content').innerHTML = '';
+      document.getElementById('results-content').style.display = 'none';
+      document.getElementById('loading-state').style.display = 'block';
+    }
+
+    async function sendOtp() {
+      clearError('err-email');
+      const email = document.getElementById('email').value.trim();
+      if (!email || !email.includes('@')) {
+        showError('err-email', 'נא להזין כתובת אימייל תקינה');
+        return;
+      }
+
+      const btn = document.getElementById('btn-send-otp');
+      btn.disabled = true;
+      btn.textContent = 'שולח...';
+
+      try {
+        const resp = await fetch('/api/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok || data.Error) {
+          showError('err-email', data.Error?.Message || data.error || 'שגיאה בשליחת הקוד');
+          return;
+        }
+
+        authData.email = email;
+        authData.authenticationToken = data.Data?.ShortAuthToken ?? data.Data?.authenticationToken ?? data.Data?.AuthenticationToken;
+        document.getElementById('otp-hint').textContent = `קוד אימות נשלח ל־${email}`;
+        showStep('step-otp');
+      } catch (e) {
+        showError('err-email', 'שגיאת רשת: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'שלח קוד אימות';
+      }
+    }
+
+    async function verifyOtp() {
+      clearError('err-otp');
+      const otp = document.getElementById('otp').value.trim();
+      if (!otp) {
+        showError('err-otp', 'נא להזין את קוד האימות');
+        return;
+      }
+
+      const btn = document.getElementById('btn-verify-otp');
+      btn.disabled = true;
+      btn.textContent = 'מאמת...';
+
+      try {
+        const resp = await fetch('/api/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: authData.email,
+            otp,
+            authenticationToken: authData.authenticationToken,
+          }),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok || data.error) {
+          showError('err-otp', data.error || 'קוד שגוי, נסה שוב');
+          return;
+        }
+
+        authData.authCookie  = data.auth?.authCookie;
+        authData.refreshToken = data.auth?.refreshToken;
+
+        showStep('step-results');
+        await loadVouchers();
+      } catch (e) {
+        showError('err-otp', 'שגיאת רשת: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'כניסה ובדיקת שוברים';
+      }
+    }
+
+    async function loadVouchers() {
+      document.getElementById('loading-state').style.display = 'block';
+      document.getElementById('results-content').style.display = 'none';
+
+      try {
+        const resp = await fetch('/api/vouchers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            authCookie: authData.authCookie,
+            refreshToken: authData.refreshToken,
+          }),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          renderError(data.error || 'שגיאה בשליפת השוברים');
+          return;
+        }
+
+        renderVouchers(data.vouchers || []);
+      } catch (e) {
+        renderError('שגיאת רשת: ' + e.message);
+      } finally {
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('results-content').style.display = 'block';
+      }
+    }
+
+    function renderError(msg) {
+      document.getElementById('results-content').innerHTML =
+        `<div class="error-msg" style="display:block;">${msg}</div>`;
+    }
+
+    function formatDate(str) {
+      if (!str) return '—';
+      try {
+        const d = new Date(str);
+        return d.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' });
+      } catch { return str; }
+    }
+
+    function formatAmount(amount) {
+      if (!amount) return '';
+      return `₪${Number(amount).toLocaleString('he-IL')}`;
+    }
+
+    function renderVouchers(vouchers) {
+      const unused = vouchers.filter(v => !v.used);
+      const used   = vouchers.filter(v =>  v.used);
+
+      let html = '';
+
+      if (vouchers.length === 0) {
+        html = `
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <p>לא נמצאו שוברים בחשבון זה</p>
+          </div>`;
+      } else {
+        html += `
+          <div class="summary">
+            <h2>סה"כ ${unused.length} שוברים פעילים מתוך ${vouchers.length}</h2>
+            <p>שווי שוברים פעילים: ${formatAmount(unused.reduce((s, v) => s + (v.amount || 0), 0))}</p>
+          </div>
+          <div class="voucher-grid">`;
+
+        const sorted = [...unused, ...used];
+        sorted.forEach((v, i) => {
+          const cls    = v.used ? 'used' : 'unused';
+          const badge  = v.used
+            ? '<span class="badge badge-used">נוצל</span>'
+            : '<span class="badge badge-valid">פעיל</span>';
+
+          html += `
+            <div class="voucher-card ${cls}">
+              <div class="voucher-header">
+                <span class="voucher-store">${v.restaurantName || 'שובר'}</span>
+                <span class="voucher-amount">${formatAmount(v.amount)}</span>
+              </div>
+              ${badge}
+              <div class="voucher-meta">
+                <span>תוקף עד: ${formatDate(v.expirationDate || v.validityDate)}</span>
+              </div>
+              ${v.barcodeImageUrl || v.barcodeNumber ? `
+                <button class="barcode-toggle" onclick="toggleBarcode(${i})">הצג ברקוד</button>
+                <div class="barcode-img" id="barcode-${i}">
+                  ${v.barcodeImageUrl ? `<img src="${v.barcodeImageUrl}" alt="ברקוד" />` : ''}
+                  <div class="barcode-num">${v.barcodeNumber || ''}</div>
+                </div>` : ''}
+            </div>`;
+        });
+
+        html += '</div>';
+      }
+
+      document.getElementById('results-content').innerHTML = html;
+    }
+
+    function toggleBarcode(i) {
+      const el  = document.getElementById(`barcode-${i}`);
+      const btn = el.previousElementSibling;
+      const visible = el.style.display === 'block';
+      el.style.display = visible ? 'none' : 'block';
+      btn.textContent  = visible ? 'הצג ברקוד' : 'הסתר ברקוד';
+    }
+  </script>
+</body>
+</html>
