@@ -119,10 +119,9 @@ class RotationService : Service() {
         val savedVersion = prefs.getInt(KEY_VERSION, -1)
         return if (savedVersion != currentVersion) {
             prefs.edit().remove(KEY_X).remove(KEY_Y).putInt(KEY_VERSION, currentVersion).apply()
-            // ברירת מחדל: y = navBarHeight כדי לשבת ממש מעל שורת הניווט
-            Pair(0, navBarHeight())
+            Pair(0, 0)
         } else {
-            Pair(prefs.getInt(KEY_X, 0), prefs.getInt(KEY_Y, navBarHeight()))
+            Pair(prefs.getInt(KEY_X, 0), prefs.getInt(KEY_Y, 0))
         }
     }
 
@@ -159,7 +158,7 @@ class RotationService : Service() {
                     params.x = initialX + dx
                     // גרביטציה תחתונה: תנועה למעלה מגדילה y; מינימום navBarHeight כדי לא
                     // לצנוח לתוך אזור הניווט (שם touches נבלעים על-ידי חלון המערכת)
-                    params.y = (initialY - dy).coerceAtLeast(navBarHeight())
+                    params.y = maxOf(0, initialY - dy)
                     windowManager.updateViewLayout(v, params)
                     return true
                 }
