@@ -1,3 +1,15 @@
 .claude/
 node_modules/
 .DS_Store
+
+# Android / Gradle
+.gradle/
+build/
+/local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+*.iml
+.idea/

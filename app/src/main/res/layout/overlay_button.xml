@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  הכפתור הצף עצמו: רקע כהה בגובה סרגל הניווט כדי שייראה כחלק ממנו,
+  עם אייקון סיבוב לבן במרכז.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:background="@drawable/overlay_button_bg"
+    android:paddingStart="22dp"
+    android:paddingEnd="22dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ImageView
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_rotate"
+        android:contentDescription="@string/cd_rotate"
+        android:tint="@color/nav_bar_icon" />
+
+</FrameLayout>
