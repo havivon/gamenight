@@ -8,9 +8,11 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.pm.PackageManager
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -63,6 +65,14 @@ class RotationService : Service() {
     private fun addOverlayButton() {
         if (buttonView != null) return
 
+        // בדיקת הרשאה לפני ניסיון הוספת view – מונע קריסה אם ההרשאה נשללה
+        if (!Settings.canDrawOverlays(this)) {
+            stopSelf()
+            return
+        }
+
+        val (posX, posY) = loadPosition()
+
         val view = LayoutInflater.from(this).inflate(R.layout.overlay_button, null)
 
         params = WindowManager.LayoutParams(
@@ -74,24 +84,34 @@ class RotationService : Service() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            // צמוד לתחתית, במרכז – כך שייראה כחלק מסרגל הניווט
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val savedVersion = prefs.getInt(KEY_VERSION, 0)
-            val appVersion = packageManager.getPackageInfo(packageName, 0).versionCode.toInt()
-            if (savedVersion != appVersion) {
-                // גרסה חדשה — מאפסים את המיקום לברירת המחדל (מרכז, על שורת הניווט)
-                prefs.edit().remove(KEY_X).remove(KEY_Y).putInt(KEY_VERSION, appVersion).apply()
-                x = 0; y = 0
-            } else {
-                x = prefs.getInt(KEY_X, 0)
-                y = prefs.getInt(KEY_Y, 0)
-            }
+            x = posX
+            y = posY
         }
 
         view.setOnTouchListener(DragClickListener())
-        windowManager.addView(view, params)
+        runCatching { windowManager.addView(view, params) }.onFailure { stopSelf(); return }
         buttonView = view
+    }
+
+    private fun loadPosition(): Pair<Int, Int> {
+        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val currentVersion = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0)).longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, 0).versionCode
+            }
+        }.getOrDefault(0)
+
+        val savedVersion = prefs.getInt(KEY_VERSION, -1)
+        return if (savedVersion != currentVersion) {
+            prefs.edit().remove(KEY_X).remove(KEY_Y).putInt(KEY_VERSION, currentVersion).apply()
+            Pair(0, 0)
+        } else {
+            Pair(prefs.getInt(KEY_X, 0), prefs.getInt(KEY_Y, 0))
+        }
     }
 
     private fun removeOverlayButton() {
