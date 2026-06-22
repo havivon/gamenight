@@ -65,19 +65,21 @@ class RotationService : Service() {
     private fun addOverlayButton() {
         if (buttonView != null) return
 
-        // בדיקת הרשאה לפני ניסיון הוספת view – מונע קריסה אם ההרשאה נשללה
         if (!Settings.canDrawOverlays(this)) {
             stopSelf()
             return
         }
 
         val (posX, posY) = loadPosition()
+        val navH = navBarHeight()
 
         val view = LayoutInflater.from(this).inflate(R.layout.overlay_button, null)
 
+        // גובה הכפתור = גובה שורת הניווט; אנו מציבים אותו ממש מעל השורה (y=navH)
+        // כך שאירועי המגע מגיעים לשכבת-העל שלנו ולא נבלעים על-ידי חלון הניווט
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
-            navBarHeight(),
+            navH,
             overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
@@ -92,6 +94,15 @@ class RotationService : Service() {
         view.setOnTouchListener(DragClickListener())
         runCatching { windowManager.addView(view, params) }.onFailure { stopSelf(); return }
         buttonView = view
+
+        // ב-Android 10+ מסמנים את שטח הכפתור כמוחרג ממחוות הניווט,
+        // כך שגרירה לא מתפרשת כ"חזרה" או "דף הבית"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            view.post {
+                view.systemGestureExclusionRects =
+                    listOf(android.graphics.Rect(0, 0, view.width, view.height))
+            }
+        }
     }
 
     private fun loadPosition(): Pair<Int, Int> {
@@ -108,9 +119,10 @@ class RotationService : Service() {
         val savedVersion = prefs.getInt(KEY_VERSION, -1)
         return if (savedVersion != currentVersion) {
             prefs.edit().remove(KEY_X).remove(KEY_Y).putInt(KEY_VERSION, currentVersion).apply()
-            Pair(0, 0)
+            // ברירת מחדל: y = navBarHeight כדי לשבת ממש מעל שורת הניווט
+            Pair(0, navBarHeight())
         } else {
-            Pair(prefs.getInt(KEY_X, 0), prefs.getInt(KEY_Y, 0))
+            Pair(prefs.getInt(KEY_X, 0), prefs.getInt(KEY_Y, navBarHeight()))
         }
     }
 
@@ -145,9 +157,9 @@ class RotationService : Service() {
                     val dy = (event.rawY - downRawY).toInt()
                     if (abs(dx) > touchSlop || abs(dy) > touchSlop) moved = true
                     params.x = initialX + dx
-                    // גרביטציה תחתונה: תנועה כלפי מעלה מקטינה את y
-                    params.y = initialY - dy
-                    if (params.y < 0) params.y = 0
+                    // גרביטציה תחתונה: תנועה למעלה מגדילה y; מינימום navBarHeight כדי לא
+                    // לצנוח לתוך אזור הניווט (שם touches נבלעים על-ידי חלון המערכת)
+                    params.y = (initialY - dy).coerceAtLeast(navBarHeight())
                     windowManager.updateViewLayout(v, params)
                     return true
                 }
