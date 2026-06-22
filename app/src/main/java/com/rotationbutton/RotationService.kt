@@ -77,8 +77,16 @@ class RotationService : Service() {
             // צמוד לתחתית, במרכז – כך שייראה כחלק מסרגל הניווט
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            x = prefs.getInt(KEY_X, 0)
-            y = prefs.getInt(KEY_Y, 0)
+            val savedVersion = prefs.getInt(KEY_VERSION, 0)
+            val appVersion = packageManager.getPackageInfo(packageName, 0).versionCode.toInt()
+            if (savedVersion != appVersion) {
+                // גרסה חדשה — מאפסים את המיקום לברירת המחדל (מרכז, על שורת הניווט)
+                prefs.edit().remove(KEY_X).remove(KEY_Y).putInt(KEY_VERSION, appVersion).apply()
+                x = 0; y = 0
+            } else {
+                x = prefs.getInt(KEY_X, 0)
+                y = prefs.getInt(KEY_Y, 0)
+            }
         }
 
         view.setOnTouchListener(DragClickListener())
@@ -226,6 +234,7 @@ class RotationService : Service() {
         private const val PREFS = "rotation_button_prefs"
         private const val KEY_X = "pos_x"
         private const val KEY_Y = "pos_y"
+        private const val KEY_VERSION = "version_code"
 
         /** האם השירות פעיל כעת (לעדכון מצב הכפתורים ב-MainActivity) */
         @JvmStatic
