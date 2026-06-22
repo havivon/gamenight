@@ -15,14 +15,6 @@ import android.view.Surface
  */
 object RotationManager {
 
-    /** מחזור הסיבוב: 0° → 90° → 180° → 270° → 0° */
-    private val CYCLE = intArrayOf(
-        Surface.ROTATION_0,   // 0°
-        Surface.ROTATION_90,  // 90°
-        Surface.ROTATION_180, // 180°
-        Surface.ROTATION_270  // 270°
-    )
-
     /** ערך USER_ROTATION הנוכחי (Surface.ROTATION_0..3) */
     fun currentRotation(context: Context): Int =
         Settings.System.getInt(
@@ -49,7 +41,8 @@ object RotationManager {
     }
 
     /**
-     * מסובב את המסך לערך הבא במחזור וכופה אותו ידנית.
+     * מחליף (toggle) בין מצב רגיל (0°) לבין סיבוב של 90° וכופה אותו ידנית:
+     * לחיצה ראשונה → 90°, לחיצה נוספת → חזרה ל-0°.
      * מחזיר את ערך הסיבוב החדש (Surface.ROTATION_*).
      */
     fun rotateNext(context: Context): Int {
@@ -57,8 +50,11 @@ object RotationManager {
         setAutoRotate(context, false)
 
         val current = currentRotation(context)
-        val index = CYCLE.indexOf(current).let { if (it < 0) 0 else it }
-        val next = CYCLE[(index + 1) % CYCLE.size]
+        val next = if (current == Surface.ROTATION_0) {
+            Surface.ROTATION_90
+        } else {
+            Surface.ROTATION_0
+        }
 
         Settings.System.putInt(
             context.contentResolver,

@@ -17,7 +17,7 @@
     <string name="btn_start">הפעלת הכפתור</string>
     <string name="btn_stop">כיבוי הכפתור</string>
 
-    <string name="hint_usage">לחיצה על הכפתור הצף מסובבת את המסך: 0° ← 90° ← 180° ← 270°.\nניתן לגרור את הכפתור למיקום מועדף.</string>
+    <string name="hint_usage">לחיצה על הכפתור הצף מסובבת את המסך ב-90°, ולחיצה נוספת מחזירה למצב הרגיל (0°).\nניתן לגרור את הכפתור למיקום מועדף.</string>
 
     <!-- מצבים -->
     <string name="state_granted">הוענקה ✓</string>
