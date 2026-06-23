@@ -177,12 +177,7 @@ class RotationService : Service() {
     }
 
     private fun onButtonClicked() {
-        val rotation = RotationManager.rotateNext(this)
-        Toast.makeText(
-            this,
-            getString(R.string.toast_rotated, RotationManager.degreesOf(rotation)),
-            Toast.LENGTH_SHORT
-        ).show()
+        RotationManager.rotateNext(this)
     }
 
     private fun savePosition() {
@@ -230,6 +225,8 @@ class RotationService : Service() {
             .setSmallIcon(R.drawable.ic_rotate)
             .setContentIntent(openPending)
             .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setSilent(true)
             .addAction(0, getString(R.string.notif_stop), stopPending)
             .build()
 
@@ -248,7 +245,7 @@ class RotationService : Service() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.notif_channel_name),
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_MIN
         ).apply {
             description = getString(R.string.notif_channel_desc)
             setShowBadge(false)
