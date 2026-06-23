@@ -11,6 +11,7 @@ import android.content.pm.ServiceInfo
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.graphics.Region
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
@@ -60,20 +61,16 @@ class RotationService : Service() {
 
     private fun addOverlayButton() {
         if (rootView != null) return
-
-        if (!Settings.canDrawOverlays(this)) {
-            stopSelf()
-            return
-        }
+        if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
 
         val savedX = loadSavedX()
         val navH = navBarHeight()
 
-        // Full-width transparent root covers the entire nav bar row so our window
-        // has input priority over TYPE_NAVIGATION_BAR. Touches outside the icon
-        // are passed through via TOUCHABLE_INSETS_REGION.
+        // Full-width transparent window so our layer sits on top of the nav bar area.
+        // Touch passthrough outside the icon is achieved via hidden-API reflection
+        // (InternalInsetsInfo.setTouchableInsets) which is accessible at runtime on API 26+
+        // even though it's not in the public SDK stubs. A try-catch handles failure.
         val root = FrameLayout(this)
-        root.setBackgroundColor(0x00000000)
 
         val icon = LayoutInflater.from(this).inflate(R.layout.overlay_button, root, false)
         root.addView(icon)
@@ -94,26 +91,54 @@ class RotationService : Service() {
 
         icon.setOnTouchListener(DragClickListener(icon))
 
-        // Only the icon rect receives touches; the rest is passed to system nav bar.
-        root.viewTreeObserver.addOnComputeInternalInsetsListener { info ->
-            val iconRect = Rect()
-            icon.getGlobalVisibleRect(iconRect)
-            info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION)
-            info.touchableRegion.set(iconRect)
-        }
-
         runCatching { windowManager.addView(root, params) }.onFailure { stopSelf(); return }
-
         rootView = root
         iconView = icon
 
         root.post {
             icon.translationX = savedX.toFloat()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            setupTouchPassthrough(root, icon)
+            updateGestureExclusion(icon)
+        }
+    }
+
+    // Uses reflection so we don't reference the @hide class at compile time.
+    // TOUCHABLE_INSETS_REGION = 3: only the declared region receives touches,
+    // everything else falls through to the nav bar below.
+    private fun setupTouchPassthrough(root: View, icon: View) {
+        try {
+            val infoClass = Class.forName("android.view.ViewTreeObserver\$InternalInsetsInfo")
+            val setInsets = infoClass.getMethod("setTouchableInsets", Int::class.java)
+            val regionField = infoClass.getField("touchableRegion")
+            val listenerIface = Class.forName(
+                "android.view.ViewTreeObserver\$OnComputeInternalInsetsListener"
+            )
+
+            val proxy = java.lang.reflect.Proxy.newProxyInstance(
+                listenerIface.classLoader, arrayOf(listenerIface)
+            ) { _, _, args ->
+                val info = args?.getOrNull(0) ?: return@newProxyInstance null
                 val r = Rect()
                 icon.getGlobalVisibleRect(r)
-                root.systemGestureExclusionRects = listOf(r)
+                setInsets.invoke(info, 3 /* TOUCHABLE_INSETS_REGION */)
+                (regionField.get(info) as Region).set(r)
+                null
             }
+
+            val addListener = ViewTreeObserver::class.java
+                .getMethod("addOnComputeInternalInsetsListener", listenerIface)
+            addListener.invoke(root.viewTreeObserver, proxy)
+        } catch (_: Exception) {
+            // Reflection unavailable; HOME/BACK/RECENTS still work on 3-button nav
+            // because those button areas don't overlap with the icon.
+        }
+    }
+
+    private fun updateGestureExclusion(icon: View) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val r = Rect()
+            icon.getGlobalVisibleRect(r)
+            rootView?.systemGestureExclusionRects = listOf(r)
         }
     }
 
@@ -161,11 +186,7 @@ class RotationService : Service() {
                     val dx = event.rawX - downRawX
                     if (abs(dx) > touchSlop) moved = true
                     icon.translationX = initialTx + dx
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        val r = Rect()
-                        icon.getGlobalVisibleRect(r)
-                        rootView?.systemGestureExclusionRects = listOf(r)
-                    }
+                    updateGestureExclusion(icon)
                     return true
                 }
 
@@ -190,11 +211,8 @@ class RotationService : Service() {
 
     private fun navBarHeight(): Int {
         val id = resources.getIdentifier("navigation_bar_height", "dimen", "android")
-        return if (id > 0) {
-            resources.getDimensionPixelSize(id)
-        } else {
-            (48 * resources.displayMetrics.density).toInt()
-        }
+        return if (id > 0) resources.getDimensionPixelSize(id)
+        else (48 * resources.displayMetrics.density).toInt()
     }
 
     private fun overlayType(): Int = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -202,9 +220,7 @@ class RotationService : Service() {
     private fun startAsForeground() {
         createNotificationChannel()
 
-        val stopIntent = Intent(this, RotationService::class.java).apply {
-            action = ACTION_STOP
-        }
+        val stopIntent = Intent(this, RotationService::class.java).apply { action = ACTION_STOP }
         val stopPending = PendingIntent.getService(
             this, 0, stopIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -230,11 +246,7 @@ class RotationService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(
-                NOTIF_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            )
+            startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
             startForeground(NOTIF_ID, notification)
         }
@@ -249,8 +261,7 @@ class RotationService : Service() {
             description = getString(R.string.notif_channel_desc)
             setShowBadge(false)
         }
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     companion object {
@@ -266,16 +277,12 @@ class RotationService : Service() {
         var isRunning: Boolean = false
             private set
 
-        fun start(context: Context) {
-            val intent = Intent(context, RotationService::class.java)
-            context.startForegroundService(intent)
-        }
+        fun start(context: Context) =
+            context.startForegroundService(Intent(context, RotationService::class.java))
 
-        fun stop(context: Context) {
-            val intent = Intent(context, RotationService::class.java).apply {
+        fun stop(context: Context) =
+            context.startService(Intent(context, RotationService::class.java).apply {
                 action = ACTION_STOP
-            }
-            context.startService(intent)
-        }
+            })
     }
 }
