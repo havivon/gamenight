@@ -78,7 +78,7 @@ class RotationService : Service() {
         if (rootView != null) return
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
 
-        val savedX = loadSavedX()
+        val savedFraction = loadSavedFraction()
         val navH = navBarHeight()
         val screenH = screenHeight()
 
@@ -115,7 +115,7 @@ class RotationService : Service() {
         iconView = icon
 
         root.post {
-            icon.translationX = savedX.toFloat()
+            applyFraction(savedFraction, icon)
             setupTouchPassthrough(root, icon)
             updateGestureExclusion(icon)
         }
@@ -170,7 +170,8 @@ class RotationService : Service() {
         }
     }
 
-    private fun loadSavedX(): Int {
+    // Returns 0.0 (left edge) … 1.0 (right edge). Default is 1.0 (right).
+    private fun loadSavedFraction(): Float {
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val currentVersion = runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -183,11 +184,27 @@ class RotationService : Service() {
 
         val savedVersion = prefs.getInt(KEY_VERSION, -1)
         return if (savedVersion != currentVersion) {
-            prefs.edit().remove(KEY_X).putInt(KEY_VERSION, currentVersion).apply()
-            0
+            prefs.edit().remove(KEY_X_FRACTION).putInt(KEY_VERSION, currentVersion).apply()
+            1f  // fresh install → right side
         } else {
-            prefs.getInt(KEY_X, 0)
+            prefs.getFloat(KEY_X_FRACTION, 1f)  // default right
         }
+    }
+
+    // fraction 0.0 = left edge, 1.0 = right edge
+    private fun applyFraction(fraction: Float, icon: View = iconView ?: return) {
+        val screenW = resources.displayMetrics.widthPixels
+        val iconW = icon.width.takeIf { it > 0 } ?: return
+        val maxTx = (screenW - iconW) / 2f
+        icon.translationX = (-maxTx + 2 * maxTx * fraction.coerceIn(0f, 1f))
+    }
+
+    private fun currentFraction(): Float {
+        val icon = iconView ?: return 1f
+        val screenW = resources.displayMetrics.widthPixels
+        val iconW = icon.width.takeIf { it > 0 } ?: return 1f
+        val maxTx = (screenW - iconW) / 2f
+        return if (maxTx > 0f) ((icon.translationX + maxTx) / (2 * maxTx)).coerceIn(0f, 1f) else 1f
     }
 
     private fun removeOverlayButton() {
@@ -197,20 +214,21 @@ class RotationService : Service() {
     }
 
     // Called on every display change (rotation, resolution). Recalculates the window's
-    // absolute Y so it stays on the nav bar, and clamps translationX to the new width.
+    // absolute Y so it stays on the nav bar; preserves the icon's relative (fractional)
+    // position so it stays at the same side of the screen after rotation.
     private fun repositionOverlay() {
         val root = rootView ?: return
         val icon = iconView ?: return
+        val fraction = currentFraction()          // capture before dims change
         val navH = navBarHeight()
         val screenH = screenHeight()
-        val screenW = resources.displayMetrics.widthPixels
-        val iconW = icon.width.takeIf { it > 0 } ?: return
         params.y = screenH - navH
         params.height = navH
-        val maxTx = (screenW - iconW) / 2f
-        icon.translationX = icon.translationX.coerceIn(-maxTx, maxTx)
         runCatching { windowManager.updateViewLayout(root, params) }
-        updateGestureExclusion(icon)
+        root.post {
+            applyFraction(fraction, icon)
+            updateGestureExclusion(icon)
+        }
     }
 
     private inner class DragClickListener(private val icon: View) : View.OnTouchListener {
@@ -254,7 +272,7 @@ class RotationService : Service() {
 
     private fun savePosition() {
         getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putInt(KEY_X, iconView?.translationX?.toInt() ?: 0)
+            .putFloat(KEY_X_FRACTION, currentFraction())
             .apply()
     }
 
@@ -319,7 +337,7 @@ class RotationService : Service() {
         private const val CHANNEL_ID = "rotation_button_channel"
         private const val NOTIF_ID = 1001
         private const val PREFS = "rotation_button_prefs"
-        private const val KEY_X = "pos_x"
+        private const val KEY_X_FRACTION = "pos_x_fraction"
         private const val KEY_VERSION = "version_code"
 
         @JvmStatic
