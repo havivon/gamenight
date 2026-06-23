@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
+import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.Region
 import android.os.Build
@@ -65,16 +66,20 @@ class RotationService : Service() {
 
         val savedX = loadSavedX()
         val navH = navBarHeight()
+        val screenH = screenHeight()
 
-        // Full-width transparent window so our layer sits on top of the nav bar area.
-        // Touch passthrough outside the icon is achieved via hidden-API reflection
-        // (InternalInsetsInfo.setTouchableInsets) which is accessible at runtime on API 26+
-        // even though it's not in the public SDK stubs. A try-catch handles failure.
         val root = FrameLayout(this)
 
         val icon = LayoutInflater.from(this).inflate(R.layout.overlay_button, root, false)
-        root.addView(icon)
+        // Center icon horizontally; translationX slides it left/right within the full-width window
+        root.addView(icon, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            Gravity.CENTER_HORIZONTAL
+        ))
 
+        // Gravity.TOP + y=(screenH - navH) places the window at the exact nav-bar row,
+        // regardless of how FLAG_LAYOUT_IN_SCREEN resolves the BOTTOM anchor on each device.
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             navH,
@@ -84,9 +89,9 @@ class RotationService : Service() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.BOTTOM
+            gravity = Gravity.TOP or Gravity.START
             x = 0
-            y = 0
+            y = screenH - navH
         }
 
         icon.setOnTouchListener(DragClickListener(icon))
@@ -102,9 +107,9 @@ class RotationService : Service() {
         }
     }
 
-    // Uses reflection so we don't reference the @hide class at compile time.
-    // TOUCHABLE_INSETS_REGION = 3: only the declared region receives touches,
-    // everything else falls through to the nav bar below.
+    // Uses reflection to access the @hide InternalInsetsInfo API at runtime.
+    // TOUCHABLE_INSETS_REGION (=3): only the icon rect receives touches;
+    // the rest of the full-width window passes touches to the nav bar below.
     private fun setupTouchPassthrough(root: View, icon: View) {
         try {
             val infoClass = Class.forName("android.view.ViewTreeObserver\$InternalInsetsInfo")
@@ -113,7 +118,6 @@ class RotationService : Service() {
             val listenerIface = Class.forName(
                 "android.view.ViewTreeObserver\$OnComputeInternalInsetsListener"
             )
-
             val proxy = java.lang.reflect.Proxy.newProxyInstance(
                 listenerIface.classLoader, arrayOf(listenerIface)
             ) { _, _, args ->
@@ -124,13 +128,12 @@ class RotationService : Service() {
                 (regionField.get(info) as Region).set(r)
                 null
             }
-
             val addListener = ViewTreeObserver::class.java
                 .getMethod("addOnComputeInternalInsetsListener", listenerIface)
             addListener.invoke(root.viewTreeObserver, proxy)
         } catch (_: Exception) {
-            // Reflection unavailable; HOME/BACK/RECENTS still work on 3-button nav
-            // because those button areas don't overlap with the icon.
+            // If reflection is blocked the overlay still works; HOME/BACK/RECENTS
+            // remain functional because the icon doesn't cover those button positions.
         }
     }
 
@@ -139,6 +142,17 @@ class RotationService : Service() {
             val r = Rect()
             icon.getGlobalVisibleRect(r)
             rootView?.systemGestureExclusionRects = listOf(r)
+        }
+    }
+
+    private fun screenHeight(): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.currentWindowMetrics.bounds.height()
+        } else {
+            val realSize = Point()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealSize(realSize)
+            realSize.y
         }
     }
 
@@ -185,7 +199,11 @@ class RotationService : Service() {
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - downRawX
                     if (abs(dx) > touchSlop) moved = true
-                    icon.translationX = initialTx + dx
+                    // Clamp so the icon never leaves the screen edges
+                    val screenW = resources.displayMetrics.widthPixels
+                    val iconW = icon.width.takeIf { it > 0 } ?: 1
+                    val maxTx = (screenW - iconW) / 2f
+                    icon.translationX = (initialTx + dx).coerceIn(-maxTx, maxTx)
                     updateGestureExclusion(icon)
                     return true
                 }
