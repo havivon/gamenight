@@ -192,7 +192,8 @@ class RotationService : Service() {
     }
 
     // fraction 0.0 = left edge, 1.0 = right edge
-    private fun applyFraction(fraction: Float, icon: View = iconView ?: return) {
+    private fun applyFraction(fraction: Float, icon: View? = iconView) {
+        icon ?: return
         val screenW = resources.displayMetrics.widthPixels
         val iconW = icon.width.takeIf { it > 0 } ?: return
         val maxTx = (screenW - iconW) / 2f
