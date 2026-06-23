@@ -10,9 +10,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
-import android.graphics.Point
 import android.graphics.Rect
-import android.graphics.Region
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.IBinder
@@ -23,9 +21,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import android.view.ViewTreeObserver
 import android.view.WindowManager
-import android.widget.FrameLayout
 import androidx.core.app.NotificationCompat
 import kotlin.math.abs
 
@@ -33,8 +29,7 @@ class RotationService : Service() {
 
     private lateinit var windowManager: WindowManager
     private lateinit var displayManager: DisplayManager
-    private var rootView: FrameLayout? = null
-    private var iconView: View? = null
+    private var buttonView: View? = null
     private lateinit var params: WindowManager.LayoutParams
     private var touchSlop = 0
 
@@ -75,27 +70,21 @@ class RotationService : Service() {
     }
 
     private fun addOverlayButton() {
-        if (rootView != null) return
+        if (buttonView != null) return
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
 
         val savedFraction = loadSavedFraction()
         val navH = navBarHeight()
-        val screenH = screenHeight()
+        val screenW = resources.displayMetrics.widthPixels
+        // Estimate initial x so the button renders at the correct position on the first frame.
+        // Actual correction happens in view.post{} once the real width is known.
+        val estimatedW = (48 * resources.displayMetrics.density).toInt()
+        val initialX = ((screenW - estimatedW) * savedFraction).toInt()
 
-        val root = FrameLayout(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.overlay_button, null)
 
-        val icon = LayoutInflater.from(this).inflate(R.layout.overlay_button, root, false)
-        // Center icon horizontally; translationX slides it left/right within the full-width window
-        root.addView(icon, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            Gravity.CENTER_HORIZONTAL
-        ))
-
-        // Gravity.TOP + y=(screenH - navH) places the window at the exact nav-bar row,
-        // regardless of how FLAG_LAYOUT_IN_SCREEN resolves the BOTTOM anchor on each device.
         params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             navH,
             overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -103,74 +92,100 @@ class RotationService : Service() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = 0
-            y = screenH - navH
+            gravity = Gravity.BOTTOM or Gravity.START
+            x = initialX
+            y = 0
         }
 
-        icon.setOnTouchListener(DragClickListener(icon))
+        view.setOnTouchListener(DragClickListener())
+        runCatching { windowManager.addView(view, params) }.onFailure { stopSelf(); return }
+        buttonView = view
 
-        runCatching { windowManager.addView(root, params) }.onFailure { stopSelf(); return }
-        rootView = root
-        iconView = icon
-
-        root.post {
-            applyFraction(savedFraction, icon)
-            setupTouchPassthrough(root, icon)
-            updateGestureExclusion(icon)
-        }
-    }
-
-    // Uses reflection to access the @hide InternalInsetsInfo API at runtime.
-    // TOUCHABLE_INSETS_REGION (=3): only the icon rect receives touches;
-    // the rest of the full-width window passes touches to the nav bar below.
-    private fun setupTouchPassthrough(root: View, icon: View) {
-        try {
-            val infoClass = Class.forName("android.view.ViewTreeObserver\$InternalInsetsInfo")
-            val setInsets = infoClass.getMethod("setTouchableInsets", Int::class.java)
-            val regionField = infoClass.getField("touchableRegion")
-            val listenerIface = Class.forName(
-                "android.view.ViewTreeObserver\$OnComputeInternalInsetsListener"
-            )
-            val proxy = java.lang.reflect.Proxy.newProxyInstance(
-                listenerIface.classLoader, arrayOf(listenerIface)
-            ) { _, _, args ->
-                val info = args?.getOrNull(0) ?: return@newProxyInstance null
-                val r = Rect()
-                icon.getGlobalVisibleRect(r)
-                setInsets.invoke(info, 3 /* TOUCHABLE_INSETS_REGION */)
-                (regionField.get(info) as Region).set(r)
-                null
-            }
-            val addListener = ViewTreeObserver::class.java
-                .getMethod("addOnComputeInternalInsetsListener", listenerIface)
-            addListener.invoke(root.viewTreeObserver, proxy)
-        } catch (_: Exception) {
-            // If reflection is blocked the overlay still works; HOME/BACK/RECENTS
-            // remain functional because the icon doesn't cover those button positions.
+        view.post {
+            // Correct x using the real measured width
+            val iconW = view.width.takeIf { it > 0 } ?: return@post
+            params.x = ((screenW - iconW) * savedFraction).toInt()
+                .coerceIn(0, screenW - iconW)
+            runCatching { windowManager.updateViewLayout(view, params) }
+            updateGestureExclusion(view)
         }
     }
 
-    private fun updateGestureExclusion(icon: View) {
+    // On rotation: reload saved fraction and re-apply with new screen dimensions.
+    private fun repositionOverlay() {
+        val view = buttonView ?: return
+        val navH = navBarHeight()
+        val screenW = resources.displayMetrics.widthPixels
+        val iconW = view.width.takeIf { it > 0 } ?: return
+        val fraction = loadSavedFraction()
+        params.height = navH
+        params.x = ((screenW - iconW) * fraction).toInt().coerceIn(0, screenW - iconW)
+        params.y = 0
+        runCatching { windowManager.updateViewLayout(view, params) }
+        updateGestureExclusion(view)
+    }
+
+    private fun updateGestureExclusion(view: View) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val r = Rect()
-            icon.getGlobalVisibleRect(r)
-            rootView?.systemGestureExclusionRects = listOf(r)
+            val r = Rect(0, 0, view.width, view.height)
+            view.systemGestureExclusionRects = listOf(r)
         }
     }
 
-    private fun screenHeight(): Int {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            windowManager.currentWindowMetrics.bounds.height()
-        } else {
-            val realSize = Point()
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getRealSize(realSize)
-            realSize.y
+    private fun removeOverlayButton() {
+        buttonView?.let { runCatching { windowManager.removeView(it) } }
+        buttonView = null
+    }
+
+    private inner class DragClickListener : View.OnTouchListener {
+        private var initialX = 0
+        private var downRawX = 0f
+        private var moved = false
+
+        override fun onTouch(v: View, event: MotionEvent): Boolean {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = params.x
+                    downRawX = event.rawX
+                    moved = false
+                    return true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = (event.rawX - downRawX).toInt()
+                    if (abs(dx) > touchSlop) moved = true
+                    val screenW = resources.displayMetrics.widthPixels
+                    val iconW = v.width.takeIf { it > 0 } ?: 1
+                    params.x = (initialX + dx).coerceIn(0, screenW - iconW)
+                    windowManager.updateViewLayout(v, params)
+                    updateGestureExclusion(v)
+                    return true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    if (moved) savePosition(v) else onButtonClicked()
+                    return true
+                }
+            }
+            return false
         }
     }
 
-    // Returns 0.0 (left edge) … 1.0 (right edge). Default is 1.0 (right).
+    private fun onButtonClicked() {
+        RotationManager.rotateNext(this)
+    }
+
+    private fun savePosition(view: View) {
+        val screenW = resources.displayMetrics.widthPixels
+        val iconW = view.width.takeIf { it > 0 } ?: return
+        val maxX = (screenW - iconW).toFloat()
+        val fraction = if (maxX > 0f) (params.x / maxX).coerceIn(0f, 1f) else 1f
+        getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putFloat(KEY_X_FRACTION, fraction)
+            .apply()
+    }
+
+    // Returns 0.0 (left) … 1.0 (right). Default 1.0 = right side.
     private fun loadSavedFraction(): Float {
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val currentVersion = runCatching {
@@ -185,96 +200,10 @@ class RotationService : Service() {
         val savedVersion = prefs.getInt(KEY_VERSION, -1)
         return if (savedVersion != currentVersion) {
             prefs.edit().remove(KEY_X_FRACTION).putInt(KEY_VERSION, currentVersion).apply()
-            1f  // fresh install → right side
+            1f
         } else {
-            prefs.getFloat(KEY_X_FRACTION, 1f)  // default right
+            prefs.getFloat(KEY_X_FRACTION, 1f)
         }
-    }
-
-    // fraction 0.0 = left edge, 1.0 = right edge
-    private fun applyFraction(fraction: Float, icon: View? = iconView) {
-        icon ?: return
-        val screenW = resources.displayMetrics.widthPixels
-        val iconW = icon.width.takeIf { it > 0 } ?: return
-        val maxTx = (screenW - iconW) / 2f
-        icon.translationX = (-maxTx + 2 * maxTx * fraction.coerceIn(0f, 1f))
-    }
-
-    private fun currentFraction(): Float {
-        val icon = iconView ?: return 1f
-        val screenW = resources.displayMetrics.widthPixels
-        val iconW = icon.width.takeIf { it > 0 } ?: return 1f
-        val maxTx = (screenW - iconW) / 2f
-        return if (maxTx > 0f) ((icon.translationX + maxTx) / (2 * maxTx)).coerceIn(0f, 1f) else 1f
-    }
-
-    private fun removeOverlayButton() {
-        rootView?.let { runCatching { windowManager.removeView(it) } }
-        rootView = null
-        iconView = null
-    }
-
-    // Called on every display change (rotation, resolution). Recalculates the window's
-    // absolute Y so it stays on the nav bar; preserves the icon's relative (fractional)
-    // position so it stays at the same side of the screen after rotation.
-    private fun repositionOverlay() {
-        val root = rootView ?: return
-        val icon = iconView ?: return
-        val fraction = currentFraction()          // capture before dims change
-        val navH = navBarHeight()
-        val screenH = screenHeight()
-        params.y = screenH - navH
-        params.height = navH
-        runCatching { windowManager.updateViewLayout(root, params) }
-        root.post {
-            applyFraction(fraction, icon)
-            updateGestureExclusion(icon)
-        }
-    }
-
-    private inner class DragClickListener(private val icon: View) : View.OnTouchListener {
-        private var initialTx = 0f
-        private var downRawX = 0f
-        private var moved = false
-
-        override fun onTouch(v: View, event: MotionEvent): Boolean {
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    initialTx = icon.translationX
-                    downRawX = event.rawX
-                    moved = false
-                    return true
-                }
-
-                MotionEvent.ACTION_MOVE -> {
-                    val dx = event.rawX - downRawX
-                    if (abs(dx) > touchSlop) moved = true
-                    // Clamp so the icon never leaves the screen edges
-                    val screenW = resources.displayMetrics.widthPixels
-                    val iconW = icon.width.takeIf { it > 0 } ?: 1
-                    val maxTx = (screenW - iconW) / 2f
-                    icon.translationX = (initialTx + dx).coerceIn(-maxTx, maxTx)
-                    updateGestureExclusion(icon)
-                    return true
-                }
-
-                MotionEvent.ACTION_UP -> {
-                    if (moved) savePosition() else onButtonClicked()
-                    return true
-                }
-            }
-            return false
-        }
-    }
-
-    private fun onButtonClicked() {
-        RotationManager.rotateNext(this)
-    }
-
-    private fun savePosition() {
-        getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putFloat(KEY_X_FRACTION, currentFraction())
-            .apply()
     }
 
     private fun navBarHeight(): Int {
