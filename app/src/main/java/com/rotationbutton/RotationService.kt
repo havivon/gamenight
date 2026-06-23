@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
@@ -18,20 +19,17 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewTreeObserver
 import android.view.WindowManager
-import android.widget.Toast
+import android.widget.FrameLayout
 import androidx.core.app.NotificationCompat
 import kotlin.math.abs
 
-/**
- * שירות חזית המציג כפתור צף קבוע מעל סרגל הניווט.
- * לחיצה מסובבת את המסך במחזור 0°→90°→180°→270°.
- * ניתן לגרור את הכפתור למיקום מותאם אישית (המיקום נשמר).
- */
 class RotationService : Service() {
 
     private lateinit var windowManager: WindowManager
-    private var buttonView: View? = null
+    private var rootView: FrameLayout? = null
+    private var iconView: View? = null
     private lateinit var params: WindowManager.LayoutParams
     private var touchSlop = 0
 
@@ -60,25 +58,28 @@ class RotationService : Service() {
         super.onDestroy()
     }
 
-    // ---------- שכבת-העל ----------
-
     private fun addOverlayButton() {
-        if (buttonView != null) return
+        if (rootView != null) return
 
         if (!Settings.canDrawOverlays(this)) {
             stopSelf()
             return
         }
 
-        val (posX, posY) = loadPosition()
+        val savedX = loadSavedX()
         val navH = navBarHeight()
 
-        val view = LayoutInflater.from(this).inflate(R.layout.overlay_button, null)
+        // Full-width transparent root covers the entire nav bar row so our window
+        // has input priority over TYPE_NAVIGATION_BAR. Touches outside the icon
+        // are passed through via TOUCHABLE_INSETS_REGION.
+        val root = FrameLayout(this)
+        root.setBackgroundColor(0x00000000)
 
-        // גובה הכפתור = גובה שורת הניווט; אנו מציבים אותו ממש מעל השורה (y=navH)
-        // כך שאירועי המגע מגיעים לשכבת-העל שלנו ולא נבלעים על-ידי חלון הניווט
+        val icon = LayoutInflater.from(this).inflate(R.layout.overlay_button, root, false)
+        root.addView(icon)
+
         params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
             navH,
             overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -86,26 +87,37 @@ class RotationService : Service() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            x = posX
-            y = posY
+            gravity = Gravity.BOTTOM
+            x = 0
+            y = 0
         }
 
-        view.setOnTouchListener(DragClickListener())
-        runCatching { windowManager.addView(view, params) }.onFailure { stopSelf(); return }
-        buttonView = view
+        icon.setOnTouchListener(DragClickListener(icon))
 
-        // ב-Android 10+ מסמנים את שטח הכפתור כמוחרג ממחוות הניווט,
-        // כך שגרירה לא מתפרשת כ"חזרה" או "דף הבית"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            view.post {
-                view.systemGestureExclusionRects =
-                    listOf(android.graphics.Rect(0, 0, view.width, view.height))
+        // Only the icon rect receives touches; the rest is passed to system nav bar.
+        root.viewTreeObserver.addOnComputeInternalInsetsListener { info ->
+            val iconRect = Rect()
+            icon.getGlobalVisibleRect(iconRect)
+            info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION)
+            info.touchableRegion.set(iconRect)
+        }
+
+        runCatching { windowManager.addView(root, params) }.onFailure { stopSelf(); return }
+
+        rootView = root
+        iconView = icon
+
+        root.post {
+            icon.translationX = savedX.toFloat()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val r = Rect()
+                icon.getGlobalVisibleRect(r)
+                root.systemGestureExclusionRects = listOf(r)
             }
         }
     }
 
-    private fun loadPosition(): Pair<Int, Int> {
+    private fun loadSavedX(): Int {
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val currentVersion = runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -118,57 +130,47 @@ class RotationService : Service() {
 
         val savedVersion = prefs.getInt(KEY_VERSION, -1)
         return if (savedVersion != currentVersion) {
-            prefs.edit().remove(KEY_X).remove(KEY_Y).putInt(KEY_VERSION, currentVersion).apply()
-            Pair(0, 0)
+            prefs.edit().remove(KEY_X).putInt(KEY_VERSION, currentVersion).apply()
+            0
         } else {
-            Pair(prefs.getInt(KEY_X, 0), prefs.getInt(KEY_Y, 0))
+            prefs.getInt(KEY_X, 0)
         }
     }
 
     private fun removeOverlayButton() {
-        buttonView?.let {
-            runCatching { windowManager.removeView(it) }
-        }
-        buttonView = null
+        rootView?.let { runCatching { windowManager.removeView(it) } }
+        rootView = null
+        iconView = null
     }
 
-    /** מטפל בגרירה (drag) מול לחיצה (click) על אותו כפתור */
-    private inner class DragClickListener : View.OnTouchListener {
-        private var initialX = 0
-        private var initialY = 0
+    private inner class DragClickListener(private val icon: View) : View.OnTouchListener {
+        private var initialTx = 0f
         private var downRawX = 0f
-        private var downRawY = 0f
         private var moved = false
 
         override fun onTouch(v: View, event: MotionEvent): Boolean {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    initialX = params.x
-                    initialY = params.y
+                    initialTx = icon.translationX
                     downRawX = event.rawX
-                    downRawY = event.rawY
                     moved = false
                     return true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    val dx = (event.rawX - downRawX).toInt()
-                    val dy = (event.rawY - downRawY).toInt()
-                    if (abs(dx) > touchSlop || abs(dy) > touchSlop) moved = true
-                    params.x = initialX + dx
-                    // גרביטציה תחתונה: תנועה למעלה מגדילה y; מינימום navBarHeight כדי לא
-                    // לצנוח לתוך אזור הניווט (שם touches נבלעים על-ידי חלון המערכת)
-                    params.y = maxOf(0, initialY - dy)
-                    windowManager.updateViewLayout(v, params)
+                    val dx = event.rawX - downRawX
+                    if (abs(dx) > touchSlop) moved = true
+                    icon.translationX = initialTx + dx
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val r = Rect()
+                        icon.getGlobalVisibleRect(r)
+                        rootView?.systemGestureExclusionRects = listOf(r)
+                    }
                     return true
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    if (moved) {
-                        savePosition()
-                    } else {
-                        onButtonClicked()
-                    }
+                    if (moved) savePosition() else onButtonClicked()
                     return true
                 }
             }
@@ -182,8 +184,7 @@ class RotationService : Service() {
 
     private fun savePosition() {
         getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putInt(KEY_X, params.x)
-            .putInt(KEY_Y, params.y)
+            .putInt(KEY_X, iconView?.translationX?.toInt() ?: 0)
             .apply()
     }
 
@@ -197,8 +198,6 @@ class RotationService : Service() {
     }
 
     private fun overlayType(): Int = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-
-    // ---------- שירות חזית ----------
 
     private fun startAsForeground() {
         createNotificationChannel()
@@ -261,10 +260,8 @@ class RotationService : Service() {
         private const val NOTIF_ID = 1001
         private const val PREFS = "rotation_button_prefs"
         private const val KEY_X = "pos_x"
-        private const val KEY_Y = "pos_y"
         private const val KEY_VERSION = "version_code"
 
-        /** האם השירות פעיל כעת (לעדכון מצב הכפתורים ב-MainActivity) */
         @JvmStatic
         var isRunning: Boolean = false
             private set
