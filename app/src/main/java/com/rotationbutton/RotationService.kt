@@ -13,9 +13,11 @@ import android.graphics.PixelFormat
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.Region
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
+import android.view.Display
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -30,17 +32,28 @@ import kotlin.math.abs
 class RotationService : Service() {
 
     private lateinit var windowManager: WindowManager
+    private lateinit var displayManager: DisplayManager
     private var rootView: FrameLayout? = null
     private var iconView: View? = null
     private lateinit var params: WindowManager.LayoutParams
     private var touchSlop = 0
 
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) {}
+        override fun onDisplayRemoved(displayId: Int) {}
+        override fun onDisplayChanged(displayId: Int) {
+            if (displayId == Display.DEFAULT_DISPLAY) repositionOverlay()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        displayManager = getSystemService(DisplayManager::class.java)
         touchSlop = ViewConfiguration.get(this).scaledTouchSlop
         startAsForeground()
         addOverlayButton()
+        displayManager.registerDisplayListener(displayListener, null)
         isRunning = true
     }
 
@@ -55,6 +68,7 @@ class RotationService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        displayManager.unregisterDisplayListener(displayListener)
         removeOverlayButton()
         isRunning = false
         super.onDestroy()
@@ -180,6 +194,23 @@ class RotationService : Service() {
         rootView?.let { runCatching { windowManager.removeView(it) } }
         rootView = null
         iconView = null
+    }
+
+    // Called on every display change (rotation, resolution). Recalculates the window's
+    // absolute Y so it stays on the nav bar, and clamps translationX to the new width.
+    private fun repositionOverlay() {
+        val root = rootView ?: return
+        val icon = iconView ?: return
+        val navH = navBarHeight()
+        val screenH = screenHeight()
+        val screenW = resources.displayMetrics.widthPixels
+        val iconW = icon.width.takeIf { it > 0 } ?: return
+        params.y = screenH - navH
+        params.height = navH
+        val maxTx = (screenW - iconW) / 2f
+        icon.translationX = icon.translationX.coerceIn(-maxTx, maxTx)
+        runCatching { windowManager.updateViewLayout(root, params) }
+        updateGestureExclusion(icon)
     }
 
     private inner class DragClickListener(private val icon: View) : View.OnTouchListener {
