@@ -10,7 +10,6 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
-import android.graphics.Point
 import android.graphics.Rect
 import android.hardware.display.DisplayManager
 import android.os.Build
@@ -86,16 +85,16 @@ class RotationService : Service() {
 
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
-            navH,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
+            gravity = Gravity.BOTTOM or Gravity.START
             x = initialX
-            y = screenHeight() - navH
+            y = 0
         }
 
         view.setOnTouchListener(DragClickListener())
@@ -119,9 +118,8 @@ class RotationService : Service() {
         val screenW = resources.displayMetrics.widthPixels
         val iconW = view.width.takeIf { it > 0 } ?: return
         val fraction = loadSavedFraction()
-        params.height = navH
         params.x = ((screenW - iconW) * fraction).toInt().coerceIn(0, screenW - iconW)
-        params.y = screenHeight() - navH
+        params.y = 0
         runCatching { windowManager.updateViewLayout(view, params) }
         updateGestureExclusion(view)
     }
@@ -211,17 +209,6 @@ class RotationService : Service() {
         val id = resources.getIdentifier("navigation_bar_height", "dimen", "android")
         return if (id > 0) resources.getDimensionPixelSize(id)
         else (48 * resources.displayMetrics.density).toInt()
-    }
-
-    private fun screenHeight(): Int {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            windowManager.currentWindowMetrics.bounds.height()
-        } else {
-            val point = Point()
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getRealSize(point)
-            point.y
-        }
     }
 
     private fun overlayType(): Int = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
