@@ -7,10 +7,11 @@
     <string name="subtitle_main">כפתור צף קבוע בתחתית המסך לסיבוב ידני מהיר</string>
 
     <string name="section_permissions">הרשאות נדרשות</string>
-    <string name="status_overlay">הצגה מעל אפליקציות: %1$s</string>
+    <string name="status_accessibility">שירות נגישות: %1$s</string>
     <string name="status_write_settings">שינוי הגדרות מערכת: %1$s</string>
-    <string name="btn_grant_overlay">הענקת הרשאת שכבת-על</string>
+    <string name="btn_grant_accessibility">הפעלת שירות הנגישות</string>
     <string name="btn_grant_write_settings">הענקת הרשאת הגדרות</string>
+    <string name="accessibility_hint">יש להפעיל את "כפתור סיבוב" ברשימת שירותי הנגישות. השירות משמש אך ורק להצגת הכפתור הצף על שורת הניווט — הוא אינו קורא תוכן מסך.</string>
 
     <string name="section_control">הפעלה</string>
     <string name="status_service">מצב השירות: %1$s</string>
@@ -31,12 +32,8 @@
     <string name="toast_rotated">המסך סובב ל-%1$d°</string>
     <string name="error_missing_permissions">חסרות הרשאות – יש להעניק את שתי ההרשאות תחילה</string>
 
-    <!-- התראה -->
-    <string name="notif_channel_name">כפתור סיבוב</string>
-    <string name="notif_channel_desc">שירות הכפתור הצף לסיבוב המסך</string>
-    <string name="notif_title">כפתור הסיבוב פעיל</string>
-    <string name="notif_text">לחיצה על הכפתור הצף מסובבת את המסך</string>
-    <string name="notif_stop">כיבוי</string>
+    <!-- תיאור שירות הנגישות (מוצג במסך הגדרות הנגישות) -->
+    <string name="accessibility_service_desc">מציג כפתור צף על שורת הניווט לסיבוב מהיר של המסך. השירות אינו אוסף ואינו קורא תוכן מסך.</string>
 
     <string name="cd_rotate">סיבוב המסך</string>
 </resources>

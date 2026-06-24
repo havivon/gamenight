@@ -1,17 +1,17 @@
 package com.rotationbutton
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.rotationbutton.databinding.ActivityMainBinding
 
 /**
  * מסך הבית: הפעלה/כיבוי של הכפתור הצף ובדיקת ההרשאות הנדרשות.
+ *
+ * הכפתור הצף מתארח בשירות נגישות (TYPE_ACCESSIBILITY_OVERLAY) כדי שיוכל
+ * לשבת מעל שורת הניווט. לכן ה"הפעלה" משמעה הפעלת שירות הנגישות בהגדרות,
+ * וה"כיבוי" מנטרל את השירות.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -23,28 +23,21 @@ class MainActivity : AppCompatActivity() {
             refreshUi()
         }
 
-    private val notificationsLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            refreshUi()
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         binding.btnOverlayPermission.setOnClickListener {
-            settingsLauncher.launch(PermissionHelper.overlayIntent(this))
+            settingsLauncher.launch(PermissionHelper.accessibilityIntent())
         }
 
         binding.btnWriteSettingsPermission.setOnClickListener {
             settingsLauncher.launch(PermissionHelper.writeSettingsIntent(this))
         }
 
-        binding.btnStart.setOnClickListener { startButtonService() }
-        binding.btnStop.setOnClickListener { stopButtonService() }
-
-        requestNotificationsIfNeeded()
+        binding.btnStart.setOnClickListener { startButton() }
+        binding.btnStop.setOnClickListener { stopButton() }
     }
 
     override fun onResume() {
@@ -52,54 +45,41 @@ class MainActivity : AppCompatActivity() {
         refreshUi()
     }
 
-    private fun startButtonService() {
-        if (!PermissionHelper.allGranted(this)) {
+    private fun startButton() {
+        if (!PermissionHelper.canWriteSettings(this)) {
             Toast.makeText(this, R.string.error_missing_permissions, Toast.LENGTH_SHORT).show()
             refreshUi()
             return
         }
-        RotationService.start(this)
-        Toast.makeText(this, R.string.toast_started, Toast.LENGTH_SHORT).show()
-        // השהיה קצרה כדי לאפשר לשירות לעדכן את מצבו לפני הרענון
-        binding.root.postDelayed({ refreshUi() }, 300)
+        // הפעלת הכפתור = הפעלת שירות הנגישות בהגדרות.
+        settingsLauncher.launch(PermissionHelper.accessibilityIntent())
     }
 
-    private fun stopButtonService() {
-        RotationService.stop(this)
+    private fun stopButton() {
+        RotationAccessibilityService.stop()
         Toast.makeText(this, R.string.toast_stopped, Toast.LENGTH_SHORT).show()
         binding.root.postDelayed({ refreshUi() }, 300)
     }
 
-    private fun requestNotificationsIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val granted = ContextCompat.checkSelfPermission(
-                this, Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!granted) {
-                notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
-
     /** מעדכן את חיווי ההרשאות ומצב הכפתורים */
     private fun refreshUi() {
-        val overlay = PermissionHelper.canDrawOverlays(this)
+        val accessibility = PermissionHelper.isAccessibilityEnabled(this)
         val write = PermissionHelper.canWriteSettings(this)
 
         binding.statusOverlay.text = getString(
-            R.string.status_overlay,
-            granted(overlay)
+            R.string.status_accessibility,
+            granted(accessibility)
         )
         binding.statusWriteSettings.text = getString(
             R.string.status_write_settings,
             granted(write)
         )
 
-        binding.btnOverlayPermission.isEnabled = !overlay
+        binding.btnOverlayPermission.isEnabled = !accessibility
         binding.btnWriteSettingsPermission.isEnabled = !write
 
-        val running = RotationService.isRunning
-        binding.btnStart.isEnabled = overlay && write && !running
+        val running = RotationAccessibilityService.isRunning
+        binding.btnStart.isEnabled = write && !running
         binding.btnStop.isEnabled = running
 
         binding.statusService.text = getString(

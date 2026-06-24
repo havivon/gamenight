@@ -2,20 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- ציור שכבת-על מעל אפליקציות אחרות (הכפתור הצף) -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-
     <!-- שינוי הגדרות מערכת: USER_ROTATION ו-ACCELEROMETER_ROTATION -->
     <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
-
-    <!-- שירות חזית (Foreground Service) -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-
-    <!-- התראות (נדרש מ-Android 13 כדי להציג את התראת שירות החזית) -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -36,13 +26,21 @@
             </intent-filter>
         </activity>
 
+        <!--
+            שירות הנגישות מארח את הכפתור הצף בעזרת TYPE_ACCESSIBILITY_OVERLAY,
+            שהוא היחיד שיושב מעל שורת הניווט ולכן גם נראה עליה וגם מקבל מגע.
+        -->
         <service
-            android:name=".RotationService"
+            android:name=".RotationAccessibilityService"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="floating_rotation_control_overlay" />
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
         </service>
 
     </application>
