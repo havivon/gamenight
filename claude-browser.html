@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Browser</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1e1e2e;
+  --bar:#2a2a3e;
+  --card:#262636;
+  --accent:#7c6af7;
+  --accent2:#a78bfa;
+  --text:#e2e8f0;
+  --muted:#8892a4;
+  --border:#383858;
+  --green:#4ade80;
+  --red:#f87171;
+  --link:#7c6af7;
+  --link-visited:#9f87f5;
+  --hover:#32324a;
+  --result-border:#383858;
+}
+body{
+  font-family:'Segoe UI','Inter','Heebo',Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* === BROWSER CHROME === */
+#browser-chrome{
+  background:var(--bar);
+  border-bottom:1px solid var(--border);
+  padding:8px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex-shrink:0;
+  box-shadow:0 2px 12px rgba(0,0,0,.4);
+}
+#tab-bar{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.tab{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px 8px 0 0;
+  padding:6px 14px;
+  font-size:.83rem;
+  color:var(--muted);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:background .15s;
+  max-width:180px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tab.active{
+  background:var(--bg);
+  color:var(--text);
+  border-bottom-color:var(--bg);
+}
+.tab:hover:not(.active){background:var(--hover)}
+.tab .favicon{font-size:.9rem}
+.new-tab-btn{
+  background:none;border:none;color:var(--muted);font-size:1.2rem;
+  cursor:pointer;padding:4px 8px;border-radius:6px;
+  transition:background .15s;
+}
+.new-tab-btn:hover{background:var(--hover);color:var(--text)}
+.window-controls{margin-right:auto;display:flex;gap:6px}
+.wc{width:12px;height:12px;border-radius:50%;cursor:pointer}
+.wc.red{background:#ff5f57}
+.wc.yellow{background:#febc2e}
+.wc.green{background:#28c840}
+
+#nav-bar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.nav-btn{
+  background:none;border:none;color:var(--muted);
+  font-size:1.1rem;cursor:pointer;padding:6px 8px;
+  border-radius:8px;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;
+}
+.nav-btn:hover:not(:disabled){background:var(--hover);color:var(--text)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+
+#address-bar-wrap{
+  flex:1;
+  background:var(--bg);
+  border:1.5px solid var(--border);
+  border-radius:20px;
+  display:flex;
+  align-items:center;
+  padding:0 14px;
+  gap:8px;
+  transition:border-color .2s,box-shadow .2s;
+  cursor:text;
+}
+#address-bar-wrap:focus-within{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(124,106,247,.15);
+}
+#lock-icon{color:var(--green);font-size:.9rem;flex-shrink:0}
+#address-input{
+  flex:1;background:none;border:none;color:var(--text);
+  font-size:.9rem;font-family:inherit;direction:ltr;
+  padding:7px 0;outline:none;text-align:left;
+  min-width:0;
+}
+#address-input::placeholder{color:var(--muted);direction:rtl;text-align:right}
+#go-btn{
+  background:var(--accent);color:white;border:none;
+  padding:5px 14px;border-radius:12px;font-size:.85rem;
+  font-family:inherit;font-weight:600;cursor:pointer;
+  transition:background .15s,transform .1s;
+  flex-shrink:0;
+}
+#go-btn:hover{background:var(--accent2)}
+#go-btn:active{transform:scale(.97)}
+#settings-btn{
+  background:none;border:none;color:var(--muted);
+  font-size:1.2rem;cursor:pointer;padding:6px 8px;
+  border-radius:8px;transition:all .15s;
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+}
+#settings-btn:hover{background:var(--hover);color:var(--text)}
+
+/* === MAIN CONTENT === */
+#content{
+  flex:1;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+}
+
+/* === HOME PAGE === */
+#home-page{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+  gap:32px;
+}
+.home-logo{
+  text-align:center;
+}
+.home-logo h1{
+  font-size:3.5rem;
+  font-weight:800;
+  background:linear-gradient(135deg,#7c6af7,#a78bfa,#c4b5fd);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  letter-spacing:-.02em;
+}
+.home-logo p{
+  color:var(--muted);
+  font-size:1rem;
+  margin-top:6px;
+}
+.home-search{
+  width:100%;
+  max-width:580px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+#home-input{
+  flex:1;
+  background:var(--card);
+  border:1.5px solid var(--border);
+  border-radius:24px;
+  padding:14px 20px;
+  font-size:1.05rem;
+  font-family:inherit;
+  color:var(--text);
+  outline:none;
+  direction:rtl;
+  transition:border-color .2s,box-shadow .2s;
+}
+#home-input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(124,106,247,.15);
+}
+#home-input::placeholder{color:var(--muted)}
+#home-search-btn{
+  background:var(--accent);
+  color:white;
+  border:none;
+  padding:14px 24px;
+  border-radius:24px;
+  font-size:1rem;
+  font-weight:700;
+  font-family:inherit;
+  cursor:pointer;
+  transition:background .15s,transform .1s;
+  white-space:nowrap;
+}
+#home-search-btn:hover{background:var(--accent2)}
+.home-shortcuts{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+.shortcut{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 16px;
+  font-size:.85rem;
+  color:var(--muted);
+  cursor:pointer;
+  transition:all .15s;
+  display:flex;align-items:center;gap:6px;
+}
+.shortcut:hover{background:var(--hover);color:var(--text);border-color:var(--accent)}
+
+/* === SEARCH RESULTS PAGE === */
+#results-page{
+  padding:20px 40px 40px;
+  max-width:860px;
+  margin:0 auto;
+  width:100%;
+}
+#results-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:8px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+#results-search-bar{
+  flex:1;
+  background:var(--card);
+  border:1.5px solid var(--border);
+  border-radius:20px;
+  padding:10px 18px;
+  font-size:.95rem;
+  font-family:inherit;
+  color:var(--text);
+  outline:none;
+  direction:rtl;
+  transition:border-color .2s;
+  max-width:480px;
+}
+#results-search-bar:focus{border-color:var(--accent)}
+.results-count{
+  color:var(--muted);
+  font-size:.82rem;
+  padding:4px 0 0;
+  margin-bottom:16px;
+}
+.result-card{
+  margin-bottom:22px;
+  padding:0;
+  cursor:pointer;
+}
+.result-url{
+  font-size:.78rem;
+  color:var(--muted);
+  margin-bottom:3px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  direction:ltr;
+}
+.result-favicon{
+  width:16px;height:16px;
+  background:var(--accent);
+  border-radius:3px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:.55rem;color:white;font-weight:700;
+  flex-shrink:0;
+}
+.result-title{
+  font-size:1.1rem;
+  color:var(--link);
+  font-weight:600;
+  margin-bottom:5px;
+  line-height:1.3;
+  text-decoration:none;
+  transition:color .15s;
+}
+.result-card:hover .result-title{
+  color:var(--accent2);
+  text-decoration:underline;
+}
+.result-snippet{
+  font-size:.88rem;
+  color:var(--muted);
+  line-height:1.6;
+}
+.result-snippet strong{color:var(--text);font-weight:600}
+
+/* featured box */
+.featured-box{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px 20px;
+  margin-bottom:24px;
+  border-right:3px solid var(--accent);
+}
+.featured-label{
+  font-size:.72rem;
+  color:var(--accent);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:8px;
+}
+.featured-title{
+  font-size:1rem;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.featured-content{
+  font-size:.88rem;
+  color:var(--muted);
+  line-height:1.7;
+}
+
+/* page view */
+#page-view{
+  padding:32px 48px;
+  max-width:800px;
+  margin:0 auto;
+  width:100%;
+  animation:fadeIn .25s ease;
+}
+#page-view h1{font-size:1.8rem;margin-bottom:8px;line-height:1.3}
+#page-view h2{font-size:1.3rem;margin:20px 0 8px;color:var(--accent2)}
+#page-view h3{font-size:1.1rem;margin:16px 0 6px;color:var(--muted)}
+#page-view p{font-size:.93rem;line-height:1.75;margin-bottom:12px;color:var(--text)}
+#page-view ul,#page-view ol{padding-right:22px;margin-bottom:12px}
+#page-view li{font-size:.93rem;line-height:1.7;color:var(--muted);margin-bottom:4px}
+#page-view hr{border:none;border-top:1px solid var(--border);margin:20px 0}
+#page-view strong{color:var(--text)}
+#page-view blockquote{
+  border-right:3px solid var(--accent);
+  padding:10px 14px;
+  background:var(--card);
+  border-radius:0 8px 8px 0;
+  margin:12px 0;
+  font-style:italic;color:var(--muted);
+}
+.page-meta{
+  display:flex;align-items:center;gap:8px;
+  font-size:.78rem;color:var(--muted);
+  margin-bottom:20px;padding-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+.page-badge{
+  background:var(--accent);color:white;
+  padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;
+}
+
+/* === LOADING === */
+#progress-bar{
+  height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  width:0%;
+  transition:width .3s ease;
+  position:absolute;
+  top:0;left:0;right:0;
+  z-index:10;
+}
+.loading-spinner{
+  display:inline-block;width:16px;height:16px;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* === SETTINGS MODAL === */
+#settings-modal{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.7);
+  z-index:100;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+#settings-modal.open{display:flex}
+.modal-box{
+  background:var(--bar);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:32px;
+  width:90%;max-width:460px;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+.modal-box h2{font-size:1.2rem;margin-bottom:6px}
+.modal-box p{font-size:.85rem;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.modal-box label{display:block;font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--muted)}
+.modal-box input[type=text],
+.modal-box input[type=password]{
+  width:100%;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 14px;font-size:.9rem;
+  font-family:inherit;color:var(--text);outline:none;direction:ltr;
+  transition:border-color .2s;margin-bottom:16px;
+}
+.modal-box input:focus{border-color:var(--accent)}
+.modal-row{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.btn-modal{
+  padding:9px 20px;border:none;border-radius:10px;font-size:.9rem;
+  font-family:inherit;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.btn-cancel{background:var(--card);color:var(--muted)}
+.btn-cancel:hover{background:var(--hover);color:var(--text)}
+.btn-save{background:var(--accent);color:white}
+.btn-save:hover{background:var(--accent2)}
+.key-tip{
+  background:var(--card);border-radius:8px;padding:10px 12px;
+  font-size:.78rem;color:var(--muted);line-height:1.5;
+  border:1px solid var(--border);margin-bottom:16px;
+}
+.key-tip a{color:var(--accent)}
+select.modal-select{
+  width:100%;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 14px;font-size:.9rem;
+  font-family:inherit;color:var(--text);outline:none;
+  transition:border-color .2s;margin-bottom:16px;
+  cursor:pointer;
+}
+
+/* === STATUS BAR === */
+#status-bar{
+  background:var(--bar);
+  border-top:1px solid var(--border);
+  padding:3px 14px;
+  font-size:.73rem;
+  color:var(--muted);
+  display:flex;align-items:center;gap:8px;
+  flex-shrink:0;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.status-dot.thinking{background:var(--accent);animation:pulse-dot 1s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* empty state */
+.empty-results{
+  text-align:center;padding:60px 20px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.empty-results .big-icon{font-size:3rem}
+.empty-results h3{color:var(--muted);font-weight:500}
+
+/* result divider */
+.results-section-label{
+  font-size:.75rem;color:var(--muted);font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em;
+  margin:0 0 14px;
+  display:flex;align-items:center;gap:8px;
+}
+.results-section-label::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+
+@media(max-width:600px){
+  #results-page{padding:12px 16px 32px}
+  #page-view{padding:16px 18px 32px}
+  .home-logo h1{font-size:2.5rem}
+  #home-input{font-size:.95rem;padding:12px 16px}
+  #home-search-btn{padding:12px 18px}
+}
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar"></div>
+
+<!-- BROWSER CHROME -->
+<div id="browser-chrome">
+  <!-- Tab Bar -->
+  <div id="tab-bar">
+    <div class="window-controls" style="direction:ltr">
+      <div class="wc red" title="סגור"></div>
+      <div class="wc yellow" title="מזער"></div>
+      <div class="wc green" title="הגדל"></div>
+    </div>
+    <div class="tab active" id="main-tab">
+      <span class="favicon">🤖</span>
+      <span id="tab-title">Claude Browser</span>
+    </div>
+    <button class="new-tab-btn" onclick="goHome()" title="טאב חדש">+</button>
+  </div>
+
+  <!-- Navigation Bar -->
+  <div id="nav-bar">
+    <button class="nav-btn" id="back-btn" onclick="goBack()" title="אחורה" disabled>&#8592;</button>
+    <button class="nav-btn" id="fwd-btn" onclick="goForward()" title="קדימה" disabled>&#8594;</button>
+    <button class="nav-btn" id="reload-btn" onclick="reloadPage()" title="רענן">&#8635;</button>
+    <button class="nav-btn" onclick="goHome()" title="בית">&#8962;</button>
+
+    <div id="address-bar-wrap" onclick="focusAddress()">
+      <span id="lock-icon">🔒</span>
+      <input type="text" id="address-input"
+             placeholder="חפש ב-Claude Browser או הקלד כתובת..."
+             autocomplete="off" spellcheck="false"
+             onkeydown="handleAddressKey(event)">
+      <button id="go-btn" onclick="navigate()">חפש</button>
+    </div>
+
+    <button id="settings-btn" onclick="openSettings()" title="הגדרות">⚙️</button>
+  </div>
+</div>
+
+<!-- CONTENT AREA -->
+<div id="content">
+
+  <!-- HOME PAGE -->
+  <div id="home-page">
+    <div class="home-logo">
+      <h1>Claude Browser</h1>
+      <p>מנוע החיפוש מופעל על ידי Claude AI</p>
+    </div>
+    <div class="home-search">
+      <input type="text" id="home-input"
+             placeholder="חפש כל דבר — Claude כאן לעזור"
+             autocomplete="off"
+             onkeydown="if(event.key==='Enter')doSearch(this.value)">
+      <button id="home-search-btn" onclick="doSearch(document.getElementById('home-input').value)">
+        🔍 חפש
+      </button>
+    </div>
+    <div class="home-shortcuts">
+      <div class="shortcut" onclick="doSearch('מה מזג האוויר היום?')">🌤️ מזג אוויר</div>
+      <div class="shortcut" onclick="doSearch('חדשות היום בישראל')">📰 חדשות</div>
+      <div class="shortcut" onclick="doSearch('מתכוני אוכל קלים')">🍳 מתכונים</div>
+      <div class="shortcut" onclick="doSearch('טיפים לפיתוח תוכנה')">💻 טכנולוגיה</div>
+      <div class="shortcut" onclick="doSearch('ספרים מומלצים לקריאה')">📚 ספרים</div>
+      <div class="shortcut" onclick="doSearch('איך לשפר ביצועים ספורטיביים')">🏃 ספורט</div>
+    </div>
+  </div>
+
+  <!-- RESULTS PAGE (hidden initially) -->
+  <div id="results-page" style="display:none"></div>
+
+  <!-- PAGE VIEW (hidden initially) -->
+  <div id="page-view" style="display:none"></div>
+
+</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <div class="status-dot" id="status-dot"></div>
+  <span id="status-text">מוכן</span>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-modal">
+  <div class="modal-box">
+    <h2>⚙️ הגדרות Claude Browser</h2>
+    <p>כדי לחפש, צריך מפתח API של Anthropic. המפתח נשמר באופן מקומי בדפדפן בלבד.</p>
+    <div class="key-tip">
+      🔑 קבל מפתח חינמי בכתובת:<br>
+      <a href="#" onclick="return false" style="direction:ltr;display:block;margin-top:4px">console.anthropic.com/api-keys</a>
+    </div>
+    <label>מפתח Anthropic API</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+    <label>מודל Claude</label>
+    <select class="modal-select" id="model-select">
+      <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — מהיר וחסכוני ⚡</option>
+      <option value="claude-sonnet-4-6">Claude Sonnet 4.6 — מאוזן 🎯</option>
+    </select>
+    <label>שפת תצוגה</label>
+    <select class="modal-select" id="lang-select">
+      <option value="he">עברית</option>
+      <option value="en">English</option>
+    </select>
+    <div class="modal-row">
+      <button class="btn-modal btn-cancel" onclick="closeSettings()">ביטול</button>
+      <button class="btn-modal btn-save" onclick="saveSettings()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// === STATE ===
+let apiKey = localStorage.getItem('claude_browser_key') || '';
+let model = localStorage.getItem('claude_browser_model') || 'claude-haiku-4-5-20251001';
+let lang = localStorage.getItem('claude_browser_lang') || 'he';
+let history = [];
+let historyIdx = -1;
+let currentQuery = '';
+let isLoading = false;
+
+// === INIT ===
+document.addEventListener('DOMContentLoaded', () => {
+  if (!apiKey) {
+    setTimeout(openSettings, 400);
+  }
+  updateNavButtons();
+});
+
+// === NAVIGATION ===
+function navigate() {
+  const val = document.getElementById('address-input').value.trim();
+  if (!val) return;
+  if (val.startsWith('claude://')) {
+    handleSpecialUrl(val);
+  } else {
+    doSearch(val);
+  }
+}
+
+function handleAddressKey(e) {
+  if (e.key === 'Enter') navigate();
+}
+
+function focusAddress() {
+  const inp = document.getElementById('address-input');
+  inp.select();
+}
+
+function doSearch(query) {
+  if (!query.trim()) return;
+  if (!apiKey) { openSettings(); return; }
+  currentQuery = query.trim();
+  setAddress(`claude://search?q=${encodeURIComponent(currentQuery)}`);
+  pushHistory({ type: 'search', query: currentQuery });
+  renderSearch(currentQuery);
+}
+
+function openPage(title, query) {
+  if (!apiKey) { openSettings(); return; }
+  pushHistory({ type: 'page', title, query });
+  renderPage(title, query);
+}
+
+function goHome() {
+  pushHistory({ type: 'home' });
+  showHome();
+  setAddress('');
+  document.getElementById('tab-title').textContent = 'Claude Browser';
+}
+
+function goBack() {
+  if (historyIdx > 0) {
+    historyIdx--;
+    loadHistoryEntry(history[historyIdx]);
+  }
+}
+
+function goForward() {
+  if (historyIdx < history.length - 1) {
+    historyIdx++;
+    loadHistoryEntry(history[historyIdx]);
+  }
+}
+
+function reloadPage() {
+  if (history[historyIdx]) loadHistoryEntry(history[historyIdx]);
+}
+
+function pushHistory(entry) {
+  history = history.slice(0, historyIdx + 1);
+  history.push(entry);
+  historyIdx = history.length - 1;
+  updateNavButtons();
+}
+
+function loadHistoryEntry(entry) {
+  if (!entry) return;
+  updateNavButtons();
+  if (entry.type === 'home') { showHome(); setAddress(''); return; }
+  if (entry.type === 'search') { currentQuery = entry.query; setAddress(`claude://search?q=${encodeURIComponent(entry.query)}`); renderSearch(entry.query); }
+  if (entry.type === 'page') { renderPage(entry.title, entry.query); }
+}
+
+function updateNavButtons() {
+  document.getElementById('back-btn').disabled = historyIdx <= 0;
+  document.getElementById('fwd-btn').disabled = historyIdx >= history.length - 1;
+}
+
+function setAddress(val) {
+  document.getElementById('address-input').value = val;
+}
+
+function showHome() {
+  document.getElementById('home-page').style.display = 'flex';
+  document.getElementById('results-page').style.display = 'none';
+  document.getElementById('page-view').style.display = 'none';
+  document.getElementById('home-input').value = '';
+  document.getElementById('tab-title').textContent = 'Claude Browser';
+  document.querySelector('#browser-chrome #lock-icon').textContent = '🔒';
+  setStatus('מוכן', false);
+}
+
+// === SEARCH RESULTS ===
+async function renderSearch(query) {
+  document.getElementById('home-page').style.display = 'none';
+  document.getElementById('results-page').style.display = 'block';
+  document.getElementById('page-view').style.display = 'none';
+  document.getElementById('tab-title').textContent = `${query} — Claude Search`;
+  document.getElementById('results-page').innerHTML = `
+    <div id="results-header">
+      <span style="font-size:1.4rem">🤖</span>
+      <input type="text" id="results-search-bar" value="${escHtml(query)}"
+             onkeydown="if(event.key==='Enter')doSearch(this.value)" autocomplete="off">
+      <button id="go-btn" onclick="doSearch(document.getElementById('results-search-bar').value)" style="background:var(--accent);color:white;border:none;padding:8px 16px;border-radius:12px;font-size:.85rem;font-family:inherit;font-weight:600;cursor:pointer;">חפש</button>
+    </div>
+    <div id="results-body" style="margin-top:16px">
+      <div class="empty-results">
+        <div class="big-icon"><span class="loading-spinner"></span></div>
+        <h3>Claude חושב...</h3>
+      </div>
+    </div>`;
+  startProgress();
+  setStatus('מחפש...', true);
+  try {
+    const data = await callClaude(buildSearchPrompt(query));
+    const parsed = parseSearchResults(data);
+    renderResultsHtml(query, parsed);
+    setStatus(`נמצאו תוצאות עבור "${query}"`, false);
+  } catch (err) {
+    showError(err);
+  }
+  stopProgress();
+}
+
+function buildSearchPrompt(query) {
+  const langNote = lang === 'he'
+    ? 'ענה בעברית. '
+    : 'Reply in English. ';
+  return {
+    system: `${langNote}You are Claude Search, an advanced AI-powered search engine. When given a search query, respond ONLY with valid JSON in this exact format:
+{
+  "featured": {
+    "title": "string — short featured answer title",
+    "content": "string — 2-3 sentence direct answer to the query"
+  },
+  "results": [
+    {
+      "title": "string — result title",
+      "url": "string — realistic-looking URL like 'wikipedia.org/wiki/Topic'",
+      "snippet": "string — 2-3 sentence snippet with <strong> tags on important words",
+      "domain": "string — short domain like 'wikipedia.org'"
+    }
+  ]
+}
+Provide 5-7 results. Make them diverse, realistic, and highly relevant. The featured box gives a direct answer. URLs should look realistic. Return ONLY the JSON, nothing else.`,
+    user: query
+  };
+}
+
+function parseSearchResults(text) {
+  try {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+  } catch {}
+  return { featured: null, results: [] };
+}
+
+function renderResultsHtml(query, data) {
+  const body = document.getElementById('results-body');
+  if (!body) return;
+  let html = `<div class="results-count">כ-${(Math.floor(Math.random()*900)+100).toLocaleString()},000 תוצאות (${(Math.random()*.4+.2).toFixed(2)} שניות)</div>`;
+
+  if (data.featured && data.featured.title) {
+    html += `<div class="featured-box">
+      <div class="featured-label">🤖 תשובה מהירה מ-Claude</div>
+      <div class="featured-title">${escHtml(data.featured.title)}</div>
+      <div class="featured-content">${escHtml(data.featured.content)}</div>
+    </div>`;
+  }
+
+  html += `<div class="results-section-label">תוצאות אינטרנט</div>`;
+
+  if (!data.results || data.results.length === 0) {
+    html += `<div class="empty-results"><div class="big-icon">🔍</div><h3>לא נמצאו תוצאות</h3></div>`;
+  } else {
+    data.results.forEach((r, i) => {
+      const faviconLetter = (r.domain || 'W')[0].toUpperCase();
+      html += `<div class="result-card" onclick="openPage(${JSON.stringify(escHtml(r.title))}, ${JSON.stringify(escHtml(r.title + ' — ' + query))})">
+        <div class="result-url" dir="ltr">
+          <div class="result-favicon">${faviconLetter}</div>
+          <span>${escHtml(r.url || r.domain || 'web.claude.ai')}</span>
+        </div>
+        <div class="result-title">${escHtml(r.title)}</div>
+        <div class="result-snippet">${r.snippet || ''}</div>
+      </div>`;
+    });
+  }
+
+  body.innerHTML = html;
+}
+
+// === PAGE VIEW ===
+async function renderPage(title, query) {
+  document.getElementById('home-page').style.display = 'none';
+  document.getElementById('results-page').style.display = 'none';
+  document.getElementById('page-view').style.display = 'block';
+  document.getElementById('tab-title').textContent = title;
+  document.getElementById('page-view').innerHTML = `
+    <div class="empty-results">
+      <div class="big-icon"><span class="loading-spinner"></span></div>
+      <h3>טוען דף...</h3>
+    </div>`;
+  startProgress();
+  setStatus(`טוען: ${title}`, true);
+  try {
+    const content = await callClaude(buildPagePrompt(query));
+    document.getElementById('page-view').innerHTML = `
+      <div class="page-meta">
+        <div class="page-badge">🤖 Claude AI</div>
+        <span>${escHtml(title)}</span>
+        <span style="margin-right:auto;font-size:.72rem">נוצר: ${new Date().toLocaleDateString('he-IL')}</span>
+      </div>
+      ${markdownToHtml(content)}`;
+    setStatus(`${title} — טעון`, false);
+  } catch (err) {
+    showError(err);
+  }
+  stopProgress();
+}
+
+function buildPagePrompt(query) {
+  const langNote = lang === 'he' ? 'ענה בעברית. ' : 'Reply in English. ';
+  return {
+    system: `${langNote}You are a knowledgeable encyclopedia-style writer. Write a detailed, well-structured article about the given topic. Use markdown formatting: # for main title, ## for sections, ### for sub-sections, **bold** for emphasis, bullet lists. Write 4-6 paragraphs with rich detail. Be informative and engaging.`,
+    user: `Write an article about: ${query}`
+  };
+}
+
+function markdownToHtml(md) {
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[hublp])/gm, '')
+    .split('\n')
+    .filter(l => l.trim())
+    .map(l => l.startsWith('<') ? l : `<p>${l}</p>`)
+    .join('\n');
+}
+
+// === CLAUDE API ===
+async function callClaude({ system, user }) {
+  if (!apiKey) throw new Error('אין מפתח API — פתח הגדרות');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2048,
+      system,
+      messages: [{ role: 'user', content: user }]
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `שגיאת API: ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+// === PROGRESS BAR ===
+let progressTimer = null;
+function startProgress() {
+  isLoading = true;
+  const bar = document.getElementById('progress-bar');
+  bar.style.width = '0%';
+  bar.style.transition = 'none';
+  setTimeout(() => {
+    bar.style.transition = 'width 8s cubic-bezier(.1,.8,.5,1)';
+    bar.style.width = '85%';
+  }, 30);
+  document.getElementById('reload-btn').textContent = '✕';
+  document.querySelector('#browser-chrome #lock-icon').textContent = '🔄';
+}
+
+function stopProgress() {
+  isLoading = false;
+  const bar = document.getElementById('progress-bar');
+  bar.style.transition = 'width .25s ease';
+  bar.style.width = '100%';
+  setTimeout(() => { bar.style.width = '0%'; bar.style.transition = 'none'; }, 400);
+  document.getElementById('reload-btn').textContent = '⟳';
+  document.querySelector('#browser-chrome #lock-icon').textContent = '🔒';
+}
+
+// === STATUS ===
+function setStatus(text, loading) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot' + (loading ? ' thinking' : '');
+}
+
+// === ERRORS ===
+function showError(err) {
+  const target = document.getElementById('results-body') || document.getElementById('page-view');
+  if (target) {
+    target.innerHTML = `<div class="empty-results">
+      <div class="big-icon">⚠️</div>
+      <h3 style="color:var(--red)">${escHtml(err.message)}</h3>
+      <p style="color:var(--muted);font-size:.85rem;margin-top:8px">בדוק שמפתח ה-API תקין ונסה שנית</p>
+      <button onclick="openSettings()" style="margin-top:12px;background:var(--accent);color:white;border:none;padding:8px 18px;border-radius:10px;font-family:inherit;font-size:.9rem;cursor:pointer">פתח הגדרות</button>
+    </div>`;
+  }
+  setStatus(`שגיאה: ${err.message}`, false);
+}
+
+// === SETTINGS ===
+function openSettings() {
+  document.getElementById('api-key-input').value = apiKey;
+  document.getElementById('model-select').value = model;
+  document.getElementById('lang-select').value = lang;
+  document.getElementById('settings-modal').classList.add('open');
+  setTimeout(() => document.getElementById('api-key-input').focus(), 100);
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+
+function saveSettings() {
+  apiKey = document.getElementById('api-key-input').value.trim();
+  model = document.getElementById('model-select').value;
+  lang = document.getElementById('lang-select').value;
+  localStorage.setItem('claude_browser_key', apiKey);
+  localStorage.setItem('claude_browser_model', model);
+  localStorage.setItem('claude_browser_lang', lang);
+  closeSettings();
+  setStatus('הגדרות נשמרו ✓', false);
+}
+
+document.getElementById('settings-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-modal')) closeSettings();
+});
+
+// === HELPERS ===
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function handleSpecialUrl(url) {
+  if (url === 'claude://home' || url === 'claude://') { goHome(); return; }
+  const m = url.match(/claude:\/\/search\?q=(.+)/);
+  if (m) doSearch(decodeURIComponent(m[1]));
+}
+
+// keyboard shortcut: Cmd/Ctrl+L focuses address bar
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
+    e.preventDefault();
+    document.getElementById('address-input').select();
+    document.getElementById('address-input').focus();
+  }
+  if (e.key === 'Escape' && document.getElementById('settings-modal').classList.contains('open')) {
+    closeSettings();
+  }
+});
+
+// init history with home
+pushHistory({ type: 'home' });
+historyIdx = 0;
+updateNavButtons();
+</script>
+</body>
+</html>
