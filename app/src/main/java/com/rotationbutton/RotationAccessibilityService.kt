@@ -9,6 +9,7 @@ import android.hardware.display.DisplayManager
 import android.os.Build
 import android.view.Display
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -148,6 +149,9 @@ class RotationAccessibilityService : AccessibilityService() {
         private var downRawX = 0f
         private var moved = false
 
+        /** זמן ההרפיה של ההקשה הראשונה, לזיהוי לחיצה כפולה. 0 = אין הקשה ממתינה. */
+        private var firstTapTime = 0L
+
         override fun onTouch(v: View, event: MotionEvent): Boolean {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -169,11 +173,35 @@ class RotationAccessibilityService : AccessibilityService() {
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    if (moved) savePosition(v) else onButtonClicked()
+                    if (moved) {
+                        savePosition(v)
+                        firstTapTime = 0L   // גרירה מבטלת רצף הקשות ממתין
+                    } else {
+                        handleTap(v, event.eventTime)
+                    }
+                    return true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    firstTapTime = 0L
                     return true
                 }
             }
             return false
+        }
+
+        /**
+         * הסיבוב מתבצע רק בהקשה כפולה, כדי למנוע הפעלה בטעות מנגיעה
+         * מקרית בשורת הניווט. ההקשה הראשונה מחזירה משוב הפטי בלבד.
+         */
+        private fun handleTap(v: View, tapTime: Long) {
+            if (firstTapTime != 0L && tapTime - firstTapTime <= DOUBLE_TAP_TIMEOUT_MS) {
+                firstTapTime = 0L
+                onButtonClicked()
+            } else {
+                firstTapTime = tapTime
+                v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            }
         }
     }
 
@@ -204,6 +232,12 @@ class RotationAccessibilityService : AccessibilityService() {
     companion object {
         private const val PREFS = "rotation_button_prefs"
         private const val KEY_X_FRACTION = "pos_x_fraction"
+
+        /**
+         * חלון הזמן להקשה כפולה. מעט נדיב מברירת המחדל של המערכת (300ms)
+         * כי מדובר במטרה קטנה בשורת הניווט.
+         */
+        private const val DOUBLE_TAP_TIMEOUT_MS = 400L
 
         @JvmStatic
         var isRunning: Boolean = false
