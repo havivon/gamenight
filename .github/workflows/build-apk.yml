@@ -37,11 +37,25 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
+      # שם ייחודי לכל גרסה: מונע התנגשות עם הורדות קודמות בדפדפן,
+      # שגורמת להורדה "להיתקע" בסוף בלי שהקובץ מופיע.
+      - name: Read app version
+        id: version
+        run: |
+          VERSION=$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle)
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      - name: Prepare versioned APK
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             "RotationButton-v${{ steps.version.outputs.name }}.apk"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: RotationButton-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: RotationButton-v${{ steps.version.outputs.name }}.apk
           if-no-files-found: error
 
       - name: Publish APK to a downloadable release
@@ -51,6 +65,10 @@ jobs:
           name: RotationButton (debug build)
           body: |
             גרסת דיבאג להתקנה ישירה במכשיר.
-            הורידו את הקובץ app-debug.apk והתקינו (יש לאשר "התקנה ממקור לא ידוע").
-          files: app/build/outputs/apk/debug/app-debug.apk
+
+            **הורידו את הקובץ:** `RotationButton-v${{ steps.version.outputs.name }}.apk`
+
+            לכל גרסה שם קובץ ייחודי, כדי למנוע התנגשות עם הורדות קודמות בדפדפן.
+            בהתקנה יש לאשר "התקנה ממקור לא ידוע".
+          files: RotationButton-v${{ steps.version.outputs.name }}.apk
           prerelease: true
